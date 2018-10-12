@@ -33,6 +33,19 @@
 		</license>
 	</licenses>
 
+	<build>
+		<plugins>
+			<!-- Do not generate a source jar -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<configuration>
+					<skipSource>true</skipSource>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<developers>
 		<!-- See https://imagej.net/Team -->
 		<developer>
