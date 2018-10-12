@@ -10,8 +10,9 @@
 	</parent>
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
-	<artifactId>imcf_utilities</artifactId>
+	<artifactId>imcf-utilities</artifactId>
 	<version>4.2.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
 	<name>IMCF Utilities</name>
 	<description>
