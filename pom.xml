@@ -5,14 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>17.1.1</version>
+		<version>23.2.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
 	<artifactId>imcf-utilities</artifactId>
 	<version>4.2.0-SNAPSHOT</version>
-	<packaging>jar</packaging>
 
 	<name>IMCF Utilities</name>
 	<description>
@@ -32,19 +31,6 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
-	<build>
-		<plugins>
-			<!-- Do not generate a source jar -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<configuration>
-					<skipSource>true</skipSource>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 
 	<developers>
 		<!-- See https://imagej.net/Team -->
@@ -82,6 +68,10 @@
 		</developer>
 	</developers>
 	<contributors>
+		<!--
+		NB: Need at least one element to override the parent.
+		See: https://issues.apache.org/jira/browse/MNG-5220
+		-->
 		<contributor>
 			<name>None</name>
 		</contributor>
@@ -89,8 +79,8 @@
 
 	<mailingLists>
 		<mailingList>
-			<name>Scientific Image Community Forum</name>
-			<archive>http://forum.image.sc/</archive>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/</archive>
 		</mailingList>
 	</mailingLists>
 
@@ -109,10 +99,9 @@
 	</ciManagement>
 
 	<properties>
-		<package-name>ch.unibas.biozentrum.imcf.utilities</package-name>
-		<main-class>ch.unibas.biozentrum.imcf.utilities</main-class>
 		<license.licenseName>gpl_v3</license.licenseName>
 		<license.copyrightOwners>University of Basel, Switzerland</license.copyrightOwners>
+		<maven.source.skip>true</maven.source.skip>
 	</properties>
 
 	<repositories>
@@ -125,7 +114,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>net.imagej</groupId>
-			<artifactId>imagej</artifactId>
+			<artifactId>ij</artifactId>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
