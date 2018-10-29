@@ -18,12 +18,11 @@ from os.path import join, dirname
 from java.lang.System import getProperty
 from ij import IJ
 
-import imcf
 import micrometa
 import micrometa.fluoview
 
 from micrometa import imagej
-from misc import flatten
+from micrometa.strtools import flatten
 
 from sjlogging import __version__ as sjlogver
 from sjlogging.logger import setup_scijava_logger
