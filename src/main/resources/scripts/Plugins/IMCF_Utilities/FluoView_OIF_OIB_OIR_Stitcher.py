@@ -104,16 +104,15 @@ if not stitch_register:
 if out_format == 'OME-TIFF':
     opts['export_format'] = '".ome.tif"'
 
-imcfdir = join(getProperty('fiji.dir'), 'plugins', 'IMCF')
-imcftpl = join(imcfdir, 'imcf_libs.jar')
-log.info("Using macro templates from [%s]." % imcftpl)
+tplpath = join(getProperty('fiji.dir'), 'jars', 'python-imcf-libs.jar')
+log.info("Using macro templates from [%s]." % tplpath)
 basedir = dirname(infile)
 log.info("Using [%s] as base directory." % basedir)
 
 code = imagej.gen_stitching_macro_code(mosaics,
                                        'micrometa/ijm_templates/stitching',
                                        basedir,
-                                       imcftpl,
+                                       tplpath,
                                        opts)
 
 if print_code:
