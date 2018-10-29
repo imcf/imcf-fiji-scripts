@@ -10,7 +10,7 @@
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
 #@ Boolean(label="Show generated code",description="Print generated code to log messages for debugging") print_code
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
-#@ LogService log
+#@ LogService sjlogservice
 
 import sys
 from os.path import join, dirname
@@ -24,6 +24,10 @@ import micrometa.fluoview
 
 from micrometa import imagej
 from misc import flatten
+
+from sjlogging import __version__ as sjlogver
+from sjlogging.logger import setup_scijava_logger
+from sjlogging.setter import set_loglevel
 
 
 def gen_mosaic_details(mosaics):
@@ -48,17 +52,20 @@ def exit(msg):
     sys.exit(msg)
 
 
+log = setup_scijava_logger(sjlogservice)
+set_loglevel('DEBUG')
+
 out_format = "ICS/IDS"
 
-log.info("IMCF FluoView OIF/OIB/OIR Stitcher (%s)." % imcf.VERSION)
-log.info("micrometa package version = %s" % micrometa.__version__)
+log.info("IMCF FluoView OIF / OIB / OIR Stitcher (%s).", 'UNKNOWN')
+log.debug("python-scijava-logging version: %s", sjlogver)
+log.debug("micrometa package version: %s", micrometa.__version__)
 log.info("Parameter / selection summary:")
-log.info("> Regression threshold: %s" % stitch_regression)
-log.info("> Max/Avg displacement ratio: %s" % stitch_maxavg_ratio)
-log.info("> Max absolute displacement: %s" % stitch_abs_displace)
-log.info("> output format: %s" % out_format)
-log.info("> rotation angle: %s" % angle)
-
+log.info("> Regression threshold: %s", stitch_regression)
+log.info("> Max/Avg displacement ratio: %s", stitch_maxavg_ratio)
+log.info("> Max absolute displacement: %s", stitch_abs_displace)
+log.info("> output format: %s", out_format)
+log.info("> rotation angle: %s", angle)
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
 
