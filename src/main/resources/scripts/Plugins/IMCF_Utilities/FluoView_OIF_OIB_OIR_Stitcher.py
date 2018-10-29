@@ -52,7 +52,7 @@ def exit(msg):
 
 
 log = setup_scijava_logger(sjlogservice)
-set_loglevel('DEBUG')
+set_loglevel('INFO')
 
 out_format = "ICS/IDS"
 
