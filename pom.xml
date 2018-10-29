@@ -103,7 +103,8 @@
 	<issueManagement>
 		<system>GitHub Issues</system>
 		<url>https://github.com/imcf/fiji-imcf-utilities/issues</url>
-	</issueManagement>	<ciManagement>
+	</issueManagement>
+	<ciManagement>
 		<system>None</system>
 	</ciManagement>
 
