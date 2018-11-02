@@ -13,6 +13,7 @@
 #@ LogService sjlogservice
 
 import sys
+import io  # required due to namespace / import issues (otherwise olefile fails)
 from os.path import join, dirname
 
 from java.lang.System import getProperty
