@@ -82,7 +82,12 @@ step = 1.0 / len(mosaics.mosaictrees)
 progress = 0.0
 for i, subtree in enumerate(mosaics.mosaictrees):
     IJ.showProgress(progress)
-    mosaics.add_mosaic(subtree, i)
+    try:
+        mosaics.add_mosaic(subtree, i)
+    except ValueError as err:
+        log.warn('Skipping mosaic %s: %s', i, err)
+    except RuntimeError as err:
+        log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
     progress += step
 IJ.showProgress(progress)
 IJ.showStatus("Parsed %i mosaics." % len(mosaics))
