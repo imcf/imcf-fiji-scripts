@@ -11,7 +11,7 @@
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
 	<artifactId>imcf-utilities</artifactId>
-	<version>4.2.1-SNAPSHOT</version>
+	<version>4.3.0</version>
 
 	<name>IMCF Utilities</name>
 	<description>
@@ -87,7 +87,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/imcf/fiji-imcf-utilities</connection>
 		<developerConnection>scm:git:git@github.com:imcf/fiji-imcf-utilities</developerConnection>
-		<tag>HEAD</tag>
+		<tag>imcf-utilities-4.3.0</tag>
 		<url>https://github.com/imcf/fiji-imcf-utilities</url>
 	</scm>
 	<issueManagement>
