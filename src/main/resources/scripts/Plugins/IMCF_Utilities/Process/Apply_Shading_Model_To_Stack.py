@@ -41,6 +41,34 @@ def image_file_name(orig_name):
     return base
 
 
+def bf_export(imp, path, in_file, tag, suffix):
+    """Export an image to a given path, deriving the name from the input file.
+
+    The input filename is stripped to its pure file name, without any path or
+    suffix components, then an optional tag (e.g. "-avg") and the new format
+    suffix is added.
+    
+    Parameters
+    ----------
+    imp : ImagePlus
+        The ImagePlus object to be exported by Bio-Formats.
+    path : str or object that can be cast to a str
+        The output path.
+    in_file : str or object that can be cast to a str
+        The input file name, may contain arbitrary path components.
+    tag : str
+        An optional tag to be added at the end of the new file name, can be used
+        to denote information like "-avg" for an average projection image.
+    suffix : str
+        The new file name suffix, which also sets the file format for BF.    
+    """
+    out_file = os.path.join(str(path),
+                            image_file_name(str(in_file)) + tag + suffix)
+    log.info("Exporting to [%s]", out_file)
+    IJ.run(imp, "Bio-Formats Exporter", "save=[" + out_file + "]")
+    log.debug("Exporting finished.")
+
+
 log = sjlogging.logger.setup_scijava_logger(sjlogservice)
 sjlogging.setter.set_loglevel('DEBUG')
 
@@ -58,10 +86,8 @@ for channel_imp in orig_imps:
 
 merger = RGBStackMerge()
 merged_imp = merger.mergeChannels(orig_imps, False)
-# merged_imp.show()
+bf_export(merged_imp, out_dir, in_file, "", FORMAT)
 
-out_file = os.path.join(str(out_dir), image_file_name(str(in_file)) + FORMAT)
-log.info("Exporting to [%s]", out_file)
-IJ.run(merged_imp, "Bio-Formats Exporter", "save=[" + out_file + "]")
-log.info("Exporting finished.")
+
+# merged_imp.show()
 merged_imp.close()
