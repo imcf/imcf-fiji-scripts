@@ -1,5 +1,7 @@
 #@ ImagePlus (label="Shading model") shading_model
 #@ File (label="Image file to be corrected",style="file") in_file
+#@ Boolean (label="Create average projection images",value=false) avg
+#@ Boolean (label="Create max intensity projection images",value=false) mip
 #@ File (label="Output directory",style="directory") out_dir
 #@ String(visibility=MESSAGE,persist=false,label="WARNING:",value="existing files in the output location will be overwritten without confirmation!") msg_warning
 
@@ -20,7 +22,7 @@ from loci.plugins import BF
 from loci.plugins.in import ImporterOptions
 
 from ij import IJ
-from ij.plugin import ImageCalculator, RGBStackMerge
+from ij.plugin import ImageCalculator, RGBStackMerge, ZProjector
 
 import sjlogging
 
@@ -88,6 +90,19 @@ merger = RGBStackMerge()
 merged_imp = merger.mergeChannels(orig_imps, False)
 bf_export(merged_imp, out_dir, in_file, "", FORMAT)
 
+if avg:
+    log.debug("Creating average projection...")
+    avg_imp = ZProjector.run(merged_imp, "avg")
+    bf_export(avg_imp, out_dir, in_file, "-avg", FORMAT)
+    avg_imp.close()
+
+if mip:
+    log.debug("Creating maximum intensity projection...")
+    mip_imp = ZProjector.run(merged_imp, "max")
+    bf_export(mip_imp, out_dir, in_file, "-max", FORMAT)
+    mip_imp.close()
 
 # merged_imp.show()
 merged_imp.close()
+
+log.debug("Done processing [%s]", os.path.basename(str(in_file)))
