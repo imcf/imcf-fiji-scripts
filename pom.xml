@@ -11,7 +11,7 @@
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
 	<artifactId>imcf-utilities</artifactId>
-	<version>4.3.1-SNAPSHOT</version>
+	<version>5.0.0-SNAPSHOT</version>
 
 	<name>IMCF Utilities</name>
 	<description>
