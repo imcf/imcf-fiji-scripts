@@ -30,22 +30,6 @@ from sjlogging.logger import setup_scijava_logger
 from sjlogging.setter import set_loglevel
 
 
-def gen_mosaic_details(mosaics):
-    """Generate human readable string of details about the parsed mosaics."""
-    # TODO: could go into fluoview package
-    failcount = len(mosaics.mosaictrees) - len(mosaics)
-    msg = "Parsed %i mosaics from the FluoView project.\n\n" % len(mosaics)
-    if failcount > 0:
-        msg += ("\n==== WARNING ====== WARNING ====\n\n"
-                "Parsing failed on %i mosaic(s). Missing files?\n "
-                "\n==== WARNING ====== WARNING ====\n\n\n" % failcount)
-    for mos in mosaics:
-        msg += "Mosaic %i: " % mos.supplement['index']
-        msg += "%i x %i tiles, " % (mos.dim['X'], mos.dim['Y'])
-        msg += "%.1f%% overlap.\n" % mos.get_overlap()
-    return msg
-
-
 def exit(msg):
     """Convenience wrapper to log an error and exit then."""
     log.error(msg)
@@ -95,7 +79,7 @@ IJ.showStatus("Parsed %i mosaics." % len(mosaics))
 
 if len(mosaics) == 0:
     exit("Couldn't find any (valid) mosaics in the project file!")
-log.info(gen_mosaic_details(mosaics))
+log.info(mosaics.summarize())
 
 opts = {
     'export_format': '".ids"',
