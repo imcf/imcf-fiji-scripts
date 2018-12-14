@@ -1,7 +1,6 @@
-target/
-
-# auto-generated from scijava-scripts:
+# Maven build / release files
 pom.xml.releaseBackup
+target/
 
 # stuff to ignore explicitly by name, mostly for porting old code
 *.orig-gitignore.*
@@ -9,3 +8,7 @@ pom.xml.releaseBackup
 # sublime editor files
 *.sublime-project
 *.sublime-workspace
+
+# VS Code files
+.vscode/
+*.code-workspace
