@@ -23,7 +23,7 @@ import micrometa
 import micrometa.fluoview
 
 from micrometa import imagej
-from micrometa.strtools import flatten
+from imcflibs.strtools import flatten
 
 from sjlogging import __version__ as sjlogver
 from sjlogging.logger import setup_scijava_logger
