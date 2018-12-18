@@ -20,8 +20,8 @@ from java.lang.System import getProperty
 from ij import IJ
 
 import micrometa
-import micrometa.fluoview
 
+from micrometa import fluoview
 from micrometa import imagej
 from imcflibs.strtools import flatten
 
@@ -54,9 +54,9 @@ log.info("> rotation angle: %s", angle)
 infile = str(infile)
 
 if infile[-9:] == '.omp2info':
-    MosaicClass = micrometa.fluoview.FluoView3kMosaic
+    MosaicClass = fluoview.FluoView3kMosaic
 elif infile[-4:] == '.log':
-    MosaicClass = micrometa.fluoview.FluoViewMosaic
+    MosaicClass = fluoview.FluoViewMosaic
 else:
     exit('Unsupported input file: %s' % infile)
 
