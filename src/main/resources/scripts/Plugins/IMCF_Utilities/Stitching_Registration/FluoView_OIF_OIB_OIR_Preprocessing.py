@@ -66,12 +66,12 @@ for i, subtree in enumerate(mosaics.mosaictrees):
 IJ.showProgress(progress)
 IJ.showStatus("Parsed %i mosaics." % len(mosaics))
 
-if len(mosaics) == 0:
+if not mosaics:
     exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
 outdir = str(out_dir)
-if outdir == "-" or outdir == "NONE":
+if outdir in ["-", "NONE"]:
     outdir = indir
     log.info("No output directory given, using input directory [%s]." % outdir)
 else:
