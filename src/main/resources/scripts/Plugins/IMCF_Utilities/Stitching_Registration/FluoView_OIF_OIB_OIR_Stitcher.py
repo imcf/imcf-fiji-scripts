@@ -12,6 +12,9 @@
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
 
+# pylint: disable-msg=C0103
+# pylint: disable-msg=E0401
+
 import sys
 import io  # required due to namespace / import issues (otherwise olefile fails)
 from os.path import join, dirname
@@ -116,4 +119,3 @@ log.info('Writing tile configuration files.')
 imagej.write_all_tile_configs(mosaics)
 log.warn('Finished preprocessing, now launching the stitcher.')
 IJ.runMacro(flatten(code))
-
