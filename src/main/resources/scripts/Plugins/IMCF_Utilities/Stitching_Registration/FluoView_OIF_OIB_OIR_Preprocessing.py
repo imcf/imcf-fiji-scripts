@@ -25,9 +25,6 @@ from sjlogging.logger import setup_scijava_logger
 from sjlogging.setter import set_loglevel
 
 
-stitch_register = False
-
-
 def exit(msg):
     """Convenience wrapper to log an error and exit then."""
     log.error(msg)
@@ -36,8 +33,6 @@ def exit(msg):
 
 log = setup_scijava_logger(sjlogservice)
 set_loglevel('DEBUG')
-
-out_format = "ICS/IDS"
 
 log.warn("IMCF FluoView OIF / OIB / OIR Basic Stitcher (%s).", 'UNKNOWN')
 log.debug("python-scijava-logging version: %s", sjlogver)
@@ -99,11 +94,8 @@ stitcher_options = {
     'stitch_regression': 0.3,
     'stitch_maxavg_ratio': 2.5,
     'stitch_abs_displace': 3.5,
+    'compute': 'false',
 }
-if not stitch_register:
-    stitcher_options['compute'] = 'false'
-if out_format == 'OME-TIFF':
-    stitcher_options['export_format'] = '".ome.tif"'
 
 template_path = join(getProperty('fiji.dir'), 'jars', 'python-micrometa.jar')
 log.info("Using macro templates from [%s]." % template_path)
