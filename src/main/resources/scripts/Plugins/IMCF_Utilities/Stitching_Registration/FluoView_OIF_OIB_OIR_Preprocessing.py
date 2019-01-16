@@ -2,6 +2,7 @@
 #@ File(label="<html><div align='left'><h3>Supported input files</h3>&bull; [ <tt>MATL_Mosaic.log</tt> ]<br/>&bull; [ <tt>matl.omp2info</tt> ]</div></html>",description="[ MATL_Mosaic.log ] or [ matl.omp2info ] file") infile
 #@ File(label="Shading correction model",description="single slice, single channel, 32-bit float TIFF file",style="extensions:tif/tiff") model_file
 #@ File(label="Output directory",description="location for results and intermediate processing files, use 'NONE' for input dir",style="directory", value="NONE", persist=false) out_dir
+#@ String(label="Operation mode",choices={"FULL - preprocess + fuse","SIMPLE - no fusion"}) mode
 
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
@@ -114,5 +115,8 @@ log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
 imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
-log.warn('Finished preprocessing, now launching the stitcher.')
-IJ.runMacro(imcflibs.strtools.flatten(code))
+if mode[:4] == 'FULL':
+    log.info('Finished preprocessing, now launching the stitcher.')
+    IJ.runMacro(imcflibs.strtools.flatten(code))
+else:
+    log.warn('SIMPLE mode selected, NOT running the stitcher now!')
