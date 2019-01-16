@@ -1,6 +1,6 @@
 #@ String(visibility=MESSAGE,persist=false,label="<html><div align='center'><h2>Basic stitching of<br>Olympus FluoView mosaics<br><br>OIF / OIB / OIR</h2></div></html>",value="<html><img src='http://imagej.net/_images/5/5e/Tiles-Overlay.png'></html>") msg_header
 #@ File(label="<html><div align='left'><h3>Supported input files</h3>&bull; [ <tt>MATL_Mosaic.log</tt> ]<br/>&bull; [ <tt>matl.omp2info</tt> ]</div></html>",description="[ MATL_Mosaic.log ] or [ matl.omp2info ] file") infile
-#@ File(label="Shading correction model",description="single slice, single channel TIFF file",style="extensions:tif/tiff") model_file
+#@ File(label="Shading correction model",description="single slice, single channel, 32-bit float TIFF file",style="extensions:tif/tiff") model_file
 #@ File(label="Output directory",description="location for results and intermediate processing files, use 'NONE' for input dir",style="directory", value="NONE", persist=false) out_dir
 #@ Boolean(label="Show generated code",description="Print generated code to log messages for debugging") print_code
 
