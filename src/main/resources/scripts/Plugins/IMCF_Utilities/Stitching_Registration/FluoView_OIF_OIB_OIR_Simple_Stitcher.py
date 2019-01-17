@@ -16,13 +16,13 @@ from os.path import dirname, join
 
 import imcflibs
 import micrometa
+import sjlogging
+
 from ij import IJ
 from imcflibs.imagej import shading
 from java.lang.System import getProperty
 from micrometa import fluoview, imagej
 from sjlogging import __version__ as sjlogver
-from sjlogging.logger import setup_scijava_logger
-from sjlogging.setter import set_loglevel
 
 
 def exit(msg):
@@ -31,8 +31,12 @@ def exit(msg):
     sys.exit(msg)
 
 
-log = setup_scijava_logger(sjlogservice)
-set_loglevel('DEBUG')
+log = sjlogging.logger.setup_scijava_logger(sjlogservice)
+LOG_LEVEL = "INFO"
+if imcflibs.imagej.prefs.debug_mode():
+    log.warn("Enabling debug logging.")
+    LOG_LEVEL = "DEBUG"
+sjlogging.setter.set_loglevel(LOG_LEVEL)
 
 log.warn("IMCF FluoView OIF / OIB / OIR Basic Stitcher (%s).", 'UNKNOWN')
 log.debug("python-scijava-logging version: %s", sjlogver)
