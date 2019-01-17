@@ -32,6 +32,36 @@
 		</license>
 	</licenses>
 
+	<build>
+		<!-- The following filtering rule allows to automatically have the
+		project version added to the scripts by placing the string
+		'${project.version}' somewhere in the file. -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**/*.py</include>
+					<include>**/*.js</include>
+					<include>**/*.ijm</include>
+					<include>**/*.bsh</include>
+					<include>**/*.groovy</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>**/*.py</exclude>
+					<exclude>**/*.js</exclude>
+					<exclude>**/*.ijm</exclude>
+					<exclude>**/*.bsh</exclude>
+					<exclude>**/*.groovy</exclude>
+				</excludes>
+			</resource>
+		</resources>
+	</build>
+
 	<developers>
 		<!-- See https://imagej.net/Team -->
 		<developer>

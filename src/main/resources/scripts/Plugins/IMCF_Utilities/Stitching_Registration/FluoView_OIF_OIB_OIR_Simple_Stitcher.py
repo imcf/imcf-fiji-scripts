@@ -12,7 +12,7 @@
 
 import io  # required due to namespace / import issues (otherwise olefile fails)
 import sys
-from os.path import dirname, join
+from os.path import basename, dirname, join
 
 import imcflibs
 import micrometa
@@ -38,10 +38,10 @@ if imcflibs.imagej.prefs.debug_mode():
     LOG_LEVEL = "DEBUG"
 sjlogging.setter.set_loglevel(LOG_LEVEL)
 
-log.warn("IMCF FluoView OIF / OIB / OIR Basic Stitcher (%s).", 'UNKNOWN')
 log.debug("python-scijava-logging version: %s", sjlogver)
 log.debug("micrometa package version: %s", micrometa.__version__)
 log.debug("imcflibs package version: %s", imcflibs.__version__)
+log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
 indir = dirname(infile)
