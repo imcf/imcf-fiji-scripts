@@ -28,6 +28,12 @@ def exit(msg):
     sys.exit(msg)
 
 
+def show_status(msg):
+    """Wrapper to update the ImageJ status bar and the log simultaneously."""
+    log.info(msg)
+    ij.IJ.showStatus(msg)
+
+
 log = sjlogging.setup_logger(sjlogservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
@@ -57,6 +63,7 @@ mosaics = MosaicClass(infile, runparser=False)
 total = len(mosaics.mosaictrees)
 ij.IJ.showProgress(0.0)
 for i, subtree in enumerate(mosaics.mosaictrees):
+    show_status("Parsing mosaic %s / %s" % (i+1, total))
     try:
         mosaics.add_mosaic(subtree, i)
     except (ValueError, IOError) as err:
@@ -65,8 +72,7 @@ for i, subtree in enumerate(mosaics.mosaictrees):
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
     ij.IJ.showProgress(i, total)
 ij.IJ.showProgress(total, total)
-msg = "Parsed %i mosaics." % total
-ij.IJ.showStatus(msg)
+show_status("Parsed %i mosaics." % total)
 
 if not mosaics:
     exit("Couldn't find any (valid) mosaics in the project file!")
