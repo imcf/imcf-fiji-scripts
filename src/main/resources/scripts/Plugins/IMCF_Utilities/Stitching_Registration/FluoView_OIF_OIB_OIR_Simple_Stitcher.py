@@ -54,19 +54,19 @@ log.info("Parsing project file: [%s]" % infile)
 ij.IJ.showStatus("Parsing mosaics...")
 
 mosaics = MosaicClass(infile, runparser=False)
-step = 1.0 / len(mosaics.mosaictrees)
-progress = 0.0
+total = len(mosaics.mosaictrees)
+ij.IJ.showProgress(0.0)
 for i, subtree in enumerate(mosaics.mosaictrees):
-    ij.IJ.showProgress(progress)
     try:
         mosaics.add_mosaic(subtree, i)
     except (ValueError, IOError) as err:
         log.warn('Skipping mosaic %s: %s', i, err)
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
-    progress += step
-ij.IJ.showProgress(progress)
-ij.IJ.showStatus("Parsed %i mosaics." % len(mosaics))
+    ij.IJ.showProgress(i, total)
+ij.IJ.showProgress(total, total)
+msg = "Parsed %i mosaics." % total
+ij.IJ.showStatus(msg)
 
 if not mosaics:
     exit("Couldn't find any (valid) mosaics in the project file!")
