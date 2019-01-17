@@ -28,12 +28,12 @@ def exit(msg):
     sys.exit(msg)
 
 
-log = sjlogging.logger.setup_scijava_logger(sjlogservice)
+log = sjlogging.setup_logger(sjlogservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
     log.warn("Enabling debug logging.")
     LOG_LEVEL = "DEBUG"
-sjlogging.setter.set_loglevel(LOG_LEVEL)
+sjlogging.set_loglevel(LOG_LEVEL)
 
 log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
 log.info("python-scijava-logging version: %s", sjlogging.__version__)
