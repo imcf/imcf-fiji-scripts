@@ -17,12 +17,9 @@ from os.path import basename, dirname, join
 import imcflibs
 import micrometa
 import sjlogging
+import ij
 
-from ij import IJ
-from imcflibs.imagej import shading
 from java.lang.System import getProperty
-from micrometa import fluoview, imagej
-from sjlogging import __version__ as sjlogver
 
 
 def exit(msg):
@@ -38,29 +35,29 @@ if imcflibs.imagej.prefs.debug_mode():
     LOG_LEVEL = "DEBUG"
 sjlogging.setter.set_loglevel(LOG_LEVEL)
 
-log.debug("python-scijava-logging version: %s", sjlogver)
-log.debug("micrometa package version: %s", micrometa.__version__)
-log.debug("imcflibs package version: %s", imcflibs.__version__)
 log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
+log.info("python-scijava-logging version: %s", sjlogging.__version__)
+log.info("micrometa version: %s", micrometa.__version__)
+log.info("imcflibs version: %s", imcflibs.__version__)
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
 indir = dirname(infile)
 
 if infile[-9:] == '.omp2info':
-    MosaicClass = fluoview.FluoView3kMosaic
+    MosaicClass = micrometa.fluoview.FluoView3kMosaic
 elif infile[-4:] == '.log':
-    MosaicClass = fluoview.FluoViewMosaic
+    MosaicClass = micrometa.fluoview.FluoViewMosaic
 else:
     exit('Unsupported input file: %s' % infile)
 
 log.info("Parsing project file: [%s]" % infile)
-IJ.showStatus("Parsing mosaics...")
+ij.IJ.showStatus("Parsing mosaics...")
 
 mosaics = MosaicClass(infile, runparser=False)
 step = 1.0 / len(mosaics.mosaictrees)
 progress = 0.0
 for i, subtree in enumerate(mosaics.mosaictrees):
-    IJ.showProgress(progress)
+    ij.IJ.showProgress(progress)
     try:
         mosaics.add_mosaic(subtree, i)
     except (ValueError, IOError) as err:
@@ -68,8 +65,8 @@ for i, subtree in enumerate(mosaics.mosaictrees):
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
     progress += step
-IJ.showProgress(progress)
-IJ.showStatus("Parsed %i mosaics." % len(mosaics))
+ij.IJ.showProgress(progress)
+ij.IJ.showStatus("Parsed %i mosaics." % len(mosaics))
 
 if not mosaics:
     exit("Couldn't find any (valid) mosaics in the project file!")
@@ -83,12 +80,19 @@ else:
     log.info("Using output directory [%s] for results and temp files." % outdir)
 
 log.info("Pre-processing stacks: shading correction and projections...")
-shading.process_folder(indir, 'oir', outdir, str(model_file), '.ics')
+imcflibs.imagej.shading.process_folder(
+    indir,
+    'oir',
+    outdir,
+    str(model_file),
+    '.ics'
+)
 
 log.info('Writing tile configuration files.')
-imagej.write_all_tile_configs(mosaics, outdir, '.ics')
-imagej.write_all_tile_configs(mosaics, outdir, '-avg.ics', force_2d=True)
-imagej.write_all_tile_configs(mosaics, outdir, '-max.ics', force_2d=True)
+write_tile_configs = micrometa.imagej.write_all_tile_configs
+write_tile_configs(mosaics, outdir, '.ics')
+write_tile_configs(mosaics, outdir, '-avg.ics', force_2d=True)
+write_tile_configs(mosaics, outdir, '-max.ics', force_2d=True)
 
 
 stitcher_options = {
@@ -105,7 +109,7 @@ template_path = join(getProperty('fiji.dir'), 'jars', 'python-micrometa.jar')
 log.info("Using macro templates from [%s]." % template_path)
 log.info("Using [%s] as base directory." % indir)
 
-code = imagej.gen_stitching_macro(
+code = micrometa.imagej.gen_stitching_macro(
     name=mosaics.infile['dname'],
     path=outdir,
     tplpfx='templates/imagej-macro/stitching',
@@ -118,9 +122,9 @@ log.debug(imcflibs.strtools.flatten(code))
 log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
-imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
+micrometa.imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
 if mode[:4] == 'FULL':
     log.info('Finished preprocessing, now launching the stitcher.')
-    IJ.runMacro(imcflibs.strtools.flatten(code))
+    ij.IJ.runMacro(imcflibs.strtools.flatten(code))
 else:
     log.warn('SIMPLE mode selected, NOT running the stitcher now!')
