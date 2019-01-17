@@ -34,6 +34,13 @@ def show_status(msg):
     ij.IJ.showStatus(msg)
 
 
+def show_progress(cur, final):
+    """Wrapper to update the progress bar and issue a log message."""
+    # ij.IJ.showProgress is adding 1 to the value given as first parameter...
+    log.info("Progress: %s / %s (%s)" % (cur+1, final, (1.0+cur)/final))
+    ij.IJ.showProgress(cur, final)
+
+
 log = sjlogging.setup_logger(sjlogservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
@@ -62,16 +69,18 @@ ij.IJ.showStatus("Parsing mosaics...")
 mosaics = MosaicClass(infile, runparser=False)
 total = len(mosaics.mosaictrees)
 ij.IJ.showProgress(0.0)
+show_status("Parsed %s / %s mosaics" % (0, total))
 for i, subtree in enumerate(mosaics.mosaictrees):
-    show_status("Parsing mosaic %s / %s" % (i+1, total))
+    log.info("Parsing mosaic %s...", i+1)
     try:
         mosaics.add_mosaic(subtree, i)
     except (ValueError, IOError) as err:
         log.warn('Skipping mosaic %s: %s', i, err)
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
-    ij.IJ.showProgress(i, total)
-ij.IJ.showProgress(total, total)
+    show_progress(i, total)
+    show_status("Parsed %s / %s mosaics" % (i+1, total))
+show_progress(total, total)
 show_status("Parsed %i mosaics." % total)
 
 if not mosaics:
