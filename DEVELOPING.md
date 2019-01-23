@@ -1,5 +1,5 @@
-Development Instructions
-========================
+Development And Contributing Instructions
+=========================================
 
 Making a new release
 --------------------
@@ -22,9 +22,10 @@ Build & Deploy using Visual Studio Code
 
 Building and deploying the package can be greatly simplified using "tasks" in
 [Visual Studio Code][www_vscode]. By adding the following settings to the
-`.vscode/tasks.json` file, you can simply press `Ctrl+B` in VS Code and select
-the *deploy* task for running Maven and have the resulting JAR file bein placed
-in `/opt/fiji-packaging/Fiji.app/jars/`:
+`.vscode/tasks.json` file, you can simply press `Ctrl+Shift+B` in VS Code and
+select the *deploy* task for running Maven and have the resulting JAR file being
+placed in `/opt/fiji-packaging/Fiji.app/jars/` (adjust to your path as
+necessary):
 
 ```json
 {
