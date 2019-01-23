@@ -10,13 +10,13 @@
 	</parent>
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
-	<artifactId>imcf-utilities</artifactId>
+	<artifactId>imcf-fiji-scripts</artifactId>
 	<version>5.0.0-SNAPSHOT</version>
 
-	<name>IMCF Utilities</name>
+	<name>IMCF Fiji Scripts</name>
 	<description>
-        Various tools and scripts provided by the Imaging Core Facility (IMCF)
-        of the Biozentrum, University of Basel, Switzerland.
+        Various scripts for Fiji provided by the Imaging Core Facility (IMCF)
+		of the Biozentrum, University of Basel, Switzerland.
 	</description>
 	<url>https://www.biozentrum.unibas.ch/imcf</url>
 	<inceptionYear>2018</inceptionYear>
@@ -115,14 +115,14 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://github.com/imcf/fiji-imcf-utilities</connection>
-		<developerConnection>scm:git:git@github.com:imcf/fiji-imcf-utilities</developerConnection>
+		<connection>scm:git:git://github.com/imcf/imcf-fiji-scripts</connection>
+		<developerConnection>scm:git:git@github.com:imcf/imcf-fiji-scripts</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/imcf/fiji-imcf-utilities</url>
+		<url>https://github.com/imcf/imcf-fiji-scripts</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/imcf/fiji-imcf-utilities/issues</url>
+		<url>https://github.com/imcf/imcf-fiji-scripts/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
