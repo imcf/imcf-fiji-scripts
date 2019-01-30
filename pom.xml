@@ -125,13 +125,17 @@
 		<url>https://github.com/imcf/imcf-fiji-scripts/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+		<system>Travis CI</system>
+		<url>https://travis-ci.com/imcf/imcf-fiji-scripts</url>
 	</ciManagement>
 
 	<properties>
 		<license.licenseName>gpl_v3</license.licenseName>
 		<license.copyrightOwners>University of Basel, Switzerland</license.copyrightOwners>
 		<maven.source.skip>true</maven.source.skip>
+
+		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
+		<releaseProfiles>deploy-to-imagej</releaseProfiles>
 	</properties>
 
 	<repositories>
