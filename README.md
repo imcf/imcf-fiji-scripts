@@ -1,5 +1,7 @@
 # Fiji Scripts provided by the IMCF ![Package logo][img_logo]
 
+[![Build Status](https://travis-ci.com/imcf/imcf-fiji-scripts.svg?branch=master)](https://travis-ci.com/imcf/imcf-fiji-scripts)
+
 This repository contains various tools and scripts for [Fiji][fiji] provided by the
 [Imaging Core Facility (IMCF)][imcf] of the Biozentrum, University of Basel,
 Switzerland.
