@@ -156,5 +156,10 @@
 			<artifactId>jython-scijava-logging</artifactId>
 			<version>0.5.1</version>
 		</dependency>
+		<dependency>
+			<groupId>ch.unibas.biozentrum.imcf</groupId>
+			<artifactId>python-imcflibs</artifactId>
+			<version>0.2.0</version>
+		</dependency>
 	</dependencies>
 </project>
