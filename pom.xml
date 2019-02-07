@@ -151,5 +151,10 @@
 			<artifactId>ij</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>ch.unibas.biozentrum.imcf</groupId>
+			<artifactId>jython-scijava-logging</artifactId>
+			<version>0.5.1</version>
+		</dependency>
 	</dependencies>
 </project>
