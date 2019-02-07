@@ -161,5 +161,10 @@
 			<artifactId>python-imcflibs</artifactId>
 			<version>0.2.0</version>
 		</dependency>
+		<dependency>
+			<groupId>ch.unibas.biozentrum.imcf</groupId>
+			<artifactId>python-micrometa</artifactId>
+			<version>15.0.1</version>
+		</dependency>
 	</dependencies>
 </project>
