@@ -22,7 +22,7 @@ import ij
 from java.lang.System import getProperty
 
 
-def exit(msg):
+def error_exit(msg):
     """Convenience wrapper to log an error and exit then."""
     log.error(msg)
     sys.exit(msg)
@@ -61,7 +61,7 @@ if infile[-9:] == '.omp2info':
 elif infile[-4:] == '.log':
     MosaicClass = micrometa.fluoview.FluoViewMosaic
 else:
-    exit('Unsupported input file: %s' % infile)
+    error_exit('Unsupported input file: %s' % infile)
 
 log.info("Parsing project file: [%s]" % infile)
 ij.IJ.showStatus("Parsing mosaics...")
@@ -84,7 +84,7 @@ show_progress(total, total)
 show_status("Parsed %i mosaics." % total)
 
 if not mosaics:
-    exit("Couldn't find any (valid) mosaics in the project file!")
+    error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
 outdir = str(out_dir)
