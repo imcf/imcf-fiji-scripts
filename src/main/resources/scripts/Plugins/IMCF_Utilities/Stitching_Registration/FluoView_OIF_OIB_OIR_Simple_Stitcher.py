@@ -15,6 +15,8 @@ import sys
 from os.path import basename, dirname, join
 
 import imcflibs
+from imcflibs.imagej.misc import show_status, show_progress
+
 import micrometa
 import sjlogging
 import ij
@@ -28,19 +30,6 @@ def error_exit(msg):
     sys.exit(msg)
 
 
-def show_status(msg):
-    """Wrapper to update the ImageJ status bar and the log simultaneously."""
-    log.info(msg)
-    ij.IJ.showStatus(msg)
-
-
-def show_progress(cur, final):
-    """Wrapper to update the progress bar and issue a log message."""
-    # ij.IJ.showProgress is adding 1 to the value given as first parameter...
-    log.info("Progress: %s / %s (%s)" % (cur+1, final, (1.0+cur)/final))
-    ij.IJ.showProgress(cur, final)
-
-
 log = sjlogging.setup_logger(sjlogservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
@@ -52,6 +41,7 @@ log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
 log.info("python-scijava-logging version: %s", sjlogging.__version__)
 log.info("micrometa version: %s", micrometa.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
+
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
 indir = dirname(infile)
@@ -69,7 +59,7 @@ ij.IJ.showStatus("Parsing mosaics...")
 mosaics = MosaicClass(infile, runparser=False)
 total = len(mosaics.mosaictrees)
 ij.IJ.showProgress(0.0)
-show_status("Parsed %s / %s mosaics" % (0, total))
+show_status(log, "Parsed %s / %s mosaics" % (0, total))
 for i, subtree in enumerate(mosaics.mosaictrees):
     log.info("Parsing mosaic %s...", i+1)
     try:
@@ -78,10 +68,10 @@ for i, subtree in enumerate(mosaics.mosaictrees):
         log.warn('Skipping mosaic %s: %s', i, err)
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
-    show_progress(i, total)
-    show_status("Parsed %s / %s mosaics" % (i+1, total))
-show_progress(total, total)
-show_status("Parsed %i mosaics." % total)
+    show_progress(log, i, total)
+    show_status(log, "Parsed %s / %s mosaics" % (i+1, total))
+show_progress(log, total, total)
+show_status(log, "Parsed %i mosaics." % total)
 
 if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
