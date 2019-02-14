@@ -15,11 +15,10 @@
 # pylint: disable-msg=C0103
 # pylint: disable-msg=E0401
 
-import sys
 import io  # required due to namespace / import issues (otherwise olefile fails)
-from os.path import join, dirname
+import sys
+from os.path import basename, dirname, join
 
-from java.lang.System import getProperty
 from ij import IJ
 
 import micrometa
@@ -31,6 +30,7 @@ from imcflibs.strtools import flatten
 from sjlogging import __version__ as sjlogver
 from sjlogging.logger import setup_scijava_logger
 from sjlogging.setter import set_loglevel
+from java.lang.System import getProperty
 
 
 def error_exit(msg):
