@@ -33,7 +33,7 @@ from sjlogging.logger import setup_scijava_logger
 from sjlogging.setter import set_loglevel
 
 
-def exit(msg):
+def error_exit(msg):
     """Convenience wrapper to log an error and exit then."""
     log.error(msg)
     sys.exit(msg)
@@ -61,7 +61,7 @@ if infile[-9:] == '.omp2info':
 elif infile[-4:] == '.log':
     MosaicClass = fluoview.FluoViewMosaic
 else:
-    exit('Unsupported input file: %s' % infile)
+    error_exit('Unsupported input file: %s' % infile)
 
 log.info("Parsing project file: [%s]" % infile)
 IJ.showStatus("Parsing mosaics...")
@@ -81,7 +81,7 @@ IJ.showProgress(progress)
 IJ.showStatus("Parsed %i mosaics." % len(mosaics))
 
 if len(mosaics) == 0:
-    exit("Couldn't find any (valid) mosaics in the project file!")
+    error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
 opts = {
