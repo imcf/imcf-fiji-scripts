@@ -1,6 +1,6 @@
 #@ String(visibility=MESSAGE,label="Save all open images as TIFF",value="",persist=false) msg_header
 #@ File(label="Output Directory",style="directory") target_dir
-#@ LogService log
+#@ LogService sjlogservice
 
 # 2012-04-12 Niko Ehrenfeuchter
 # Save all open windows as TIFF files, either as single TIF or as TIFF stack,
@@ -15,7 +15,10 @@ import sys
 from ij import WindowManager as wm  # pylint: disable-msg=import-error
 from ij.io import FileSaver  # pylint: disable-msg=import-error
 
-target = str(target_dir)
+
+# type checks and explicit pylint disabling for scijava parameters
+target = str(target_dir)  # pylint: disable-msg=E0602
+log = sjlogservice  # pylint: disable-msg=E0602
 
 wcount = wm.getWindowCount()
 if wcount == 0:
