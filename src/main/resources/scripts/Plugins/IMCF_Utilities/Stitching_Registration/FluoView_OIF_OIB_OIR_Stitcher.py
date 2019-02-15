@@ -1,3 +1,9 @@
+"""Wrapper script to stitch Olympus OIF / OIB / OIR mosaics."""
+
+# pylint: disable-msg=C0103
+# pylint: disable-msg=E0401
+# pylint: disable-msg=line-too-long
+
 #@ String(visibility=MESSAGE,persist=false,label="<html><div align='center'><h2>Stitching of<br>Olympus FluoView mosaics<br><br>OIF / OIB / OIR</h2></div></html>",value="<html><img src='http://imagej.net/_images/5/5e/Tiles-Overlay.png'></html>") msg_header
 #@ File(label="<html><div align='left'><h3>Supported input files</h3>&bull; [ <tt>MATL_Mosaic.log</tt> ]<br/>&bull; [ <tt>matl.omp2info</tt> ]</div></html>",description="[ MATL_Mosaic.log ] or [ matl.omp2info ] file") infile
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Stitching Parameters</h3></html>",value="") msg_sec_stitching
@@ -11,8 +17,6 @@
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
 
-# pylint: disable-msg=C0103
-# pylint: disable-msg=E0401
 
 import io  # required due to namespace / import issues (otherwise olefile fails)
 import sys
