@@ -27,8 +27,8 @@ log = sjlogservice  # pylint: disable-msg=E0602
 
 wcount = wm.getWindowCount()
 if wcount == 0:
-	log.warn("No windows open, nothing to do.")
-	sys.exit()
+    log.warn("No windows open, nothing to do.")
+    sys.exit()
 
 log.info("Number of open windows: %s" % wcount)
 log.info("Selected [%s] as destination folder." % target)
@@ -37,21 +37,21 @@ log.info("Selected [%s] as destination folder." % target)
 pad = len(str(wcount))
 
 for wid in range(1, wcount+1):
-	imp = wm.getImage(wid)
-	imgid = wm.getNthImageID(wid)
-	log.debug("window id: %s, imageID: %s" % (wid, wm.getNthImageID(wid)))
-	
-	# Construct filename
-	filename = 'img_' + str(wid).zfill(pad) + '.tif'
-	filepath = target + '/' + filename
-	fs = FileSaver(imp)
-	if imp.getImageStackSize() > 1:
-		if not fs.saveAsTiffStack(filepath):
-			log.error("Error saving current image, stopping.")
-			sys.exit()
-	else:
-		if not fs.saveAsTiff(filepath):
-			log.error("Error saving current image, stopping.")
-			sys.exit()
+    imp = wm.getImage(wid)
+    imgid = wm.getNthImageID(wid)
+    log.debug("window id: %s, imageID: %s" % (wid, wm.getNthImageID(wid)))
+
+    # Construct filename
+    filename = 'img_' + str(wid).zfill(pad) + '.tif'
+    filepath = target + '/' + filename
+    fs = FileSaver(imp)
+    if imp.getImageStackSize() > 1:
+        if not fs.saveAsTiffStack(filepath):
+            log.error("Error saving current image, stopping.")
+            sys.exit()
+    else:
+        if not fs.saveAsTiff(filepath):
+            log.error("Error saving current image, stopping.")
+            sys.exit()
 
 log.info("Successfully saved %s files." % wcount)
