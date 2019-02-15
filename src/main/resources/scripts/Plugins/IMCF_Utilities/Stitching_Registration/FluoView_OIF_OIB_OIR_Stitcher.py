@@ -22,9 +22,6 @@ from imcflibs.imagej.misc import show_status, show_progress
 
 import micrometa
 import sjlogging
-
-from micrometa import fluoview
-from micrometa import imagej
 import ij
 
 from java.lang.System import getProperty
@@ -43,11 +40,11 @@ if imcflibs.imagej.prefs.debug_mode():
     LOG_LEVEL = "DEBUG"
 sjlogging.set_loglevel(LOG_LEVEL)
 
+log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
 log.info("python-scijava-logging version: %s", sjlogging.__version__)
+log.info("micrometa version: %s", micrometa.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
 
-log.info("IMCF FluoView OIF / OIB / OIR Stitcher (%s).", 'UNKNOWN')
-log.debug("micrometa package version: %s", micrometa.__version__)
 log.info("Parameter / selection summary:")
 log.info("> Regression threshold: %s", stitch_regression)
 log.info("> Max/Avg displacement ratio: %s", stitch_maxavg_ratio)
@@ -56,11 +53,12 @@ log.info("> rotation angle: %s", angle)
 
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
+indir = dirname(infile)
 
 if infile[-9:] == '.omp2info':
-    MosaicClass = fluoview.FluoView3kMosaic
+    MosaicClass = micrometa.fluoview.FluoView3kMosaic
 elif infile[-4:] == '.log':
-    MosaicClass = fluoview.FluoViewMosaic
+    MosaicClass = micrometa.fluoview.FluoViewMosaic
 else:
     error_exit('Unsupported input file: %s' % infile)
 
@@ -104,19 +102,21 @@ log.info("Using macro templates from [%s]." % tplpath)
 basedir = dirname(infile)
 log.info("Using [%s] as base directory." % basedir)
 
-code = imagej.gen_stitching_macro_code(mosaics,
-                                       'micrometa/ijm_templates/stitching',
-                                       basedir,
-                                       tplpath,
-                                       opts)
+code = micrometa.imagej.gen_stitching_macro(
+    name=mosaics.infile['dname'],
+    path=outdir,
+    tplpfx='templates/imagej-macro/stitching',
+    tplpath=template_path,
+    opts=stitcher_options
+)
 
 log.debug("============= generated macro code =============")
 log.debug(imcflibs.strtools.flatten(code))
 log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
-imagej.write_stitching_macro(code, 'stitch_all.ijm', basedir)
 log.info('Writing tile configuration files.')
 imagej.write_all_tile_configs(mosaics)
+micrometa.imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
 log.warn('Finished preprocessing, now launching the stitcher.')
 ij.IJ.runMacro(imcflibs.strtools.flatten(code))
