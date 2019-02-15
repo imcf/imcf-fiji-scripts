@@ -25,7 +25,6 @@ import sjlogging
 
 from micrometa import fluoview
 from micrometa import imagej
-from imcflibs.strtools import flatten
 import ij
 
 from java.lang.System import getProperty
