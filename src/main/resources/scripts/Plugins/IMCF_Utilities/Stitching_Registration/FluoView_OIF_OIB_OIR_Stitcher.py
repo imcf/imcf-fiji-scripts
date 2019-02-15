@@ -7,7 +7,6 @@
 #@ Float(label="Maximum absolute displacement",description="increase if some tiles are discarded completely [default=3.5]",value=3.5,min=1,max=20,stepSize=0.1,style="slider") stitch_abs_displace
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Output options</h3></html>",value="") msg_sec_output
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
-#@ Boolean(label="Show generated code",description="Print generated code to log messages for debugging") print_code
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
 
@@ -108,10 +107,9 @@ code = imagej.gen_stitching_macro_code(mosaics,
                                        tplpath,
                                        opts)
 
-if print_code:
-    log.info("============= generated macro code =============")
-    log.info(flatten(code))
-    log.info("============= end of generated  macro code =============")
+log.debug("============= generated macro code =============")
+log.debug(imcflibs.strtools.flatten(code))
+log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
 imagej.write_stitching_macro(code, 'stitch_all.ijm', basedir)
