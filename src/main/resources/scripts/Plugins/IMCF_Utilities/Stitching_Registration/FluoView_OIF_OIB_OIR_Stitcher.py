@@ -73,7 +73,7 @@ for i, subtree in enumerate(mosaics.mosaictrees):
     log.info("Parsing mosaic %s...", i+1)
     try:
         mosaics.add_mosaic(subtree, i)
-    except ValueError as err:
+    except (ValueError, IOError) as err:
         log.warn('Skipping mosaic %s: %s', i, err)
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
