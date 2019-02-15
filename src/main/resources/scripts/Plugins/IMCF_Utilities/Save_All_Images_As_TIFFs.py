@@ -7,7 +7,6 @@
 # depending on the content of the window (decided separately for each window).
 
 # TODO:
-#  * split code into setup() and run()
 #  * let the user select a file and decide how it should be split (channel,
 #    timepoints, positions, ...) and save it instead of using all open windows
 
