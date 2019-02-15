@@ -1,3 +1,8 @@
+"""Wrapper script save all open images as TIFF files."""
+
+# pylint: disable-msg=line-too-long
+# pylint: disable-msg=invalid-name
+
 #@ String(visibility=MESSAGE,label="Save all open images as TIFF",value="",persist=false) msg_header
 #@ File(label="Output Directory",style="directory") target_dir
 #@ LogService sjlogservice
