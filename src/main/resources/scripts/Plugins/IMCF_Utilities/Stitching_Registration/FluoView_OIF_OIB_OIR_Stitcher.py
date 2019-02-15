@@ -87,16 +87,16 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
-outdir = str(out_dir)
-if outdir in ["-", "NONE"]:
-    outdir = indir
-    log.info("No output directory given, using input directory [%s]." % outdir)
+out_dir = str(out_dir)
+if out_dir in ["-", "NONE"]:
+    out_dir = indir
+    log.info("No output directory given, using input directory [%s]." % out_dir)
 else:
-    log.info("Using output directory [%s] for results and temp files." % outdir)
+    log.info("Using directory [%s] for results and temp files." % out_dir)
 
 log.info('Writing tile configuration files.')
 write_tile_configs = micrometa.imagej.write_all_tile_configs
-write_tile_configs(mosaics, outdir)
+write_tile_configs(mosaics, out_dir)
 
 stitcher_options = {
     'export_format': '".ids"',
@@ -115,7 +115,7 @@ log.info("Using [%s] as base directory." % indir)
 
 code = micrometa.imagej.gen_stitching_macro(
     name=mosaics.infile['dname'],
-    path=outdir,
+    path=out_dir,
     tplpfx='templates/imagej-macro/stitching',
     tplpath=template_path,
     opts=stitcher_options
