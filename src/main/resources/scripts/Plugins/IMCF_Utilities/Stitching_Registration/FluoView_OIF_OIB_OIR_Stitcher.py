@@ -18,7 +18,11 @@
 #@ LogService sjlogservice
 
 
-import io  # required due to namespace / import issues (otherwise olefile fails)
+# explicitly import the 'io' module: this is required due to namespace / import
+# issues - otherwise the 'io' import later on done in the 'olefile' module will
+# fail as 'io' is by then already populated with the corresponding Java class:
+import io  # pylint: disable-msg=unused-import
+
 import sys
 from os.path import basename, dirname, join
 
