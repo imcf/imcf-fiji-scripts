@@ -82,7 +82,7 @@ for i, subtree in enumerate(mosaics.mosaictrees):
 show_progress(log, total, total)
 show_status(log, "Parsed %i mosaics." % total)
 
-if len(mosaics) == 0:
+if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
