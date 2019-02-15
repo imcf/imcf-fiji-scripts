@@ -86,7 +86,7 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
-opts = {
+stitcher_options = {
     'export_format': '".ids"',
     'split_z_slices': 'false',
     'rotation_angle': angle,
@@ -95,7 +95,7 @@ opts = {
     'stitch_abs_displace': stitch_abs_displace,
 }
 if not stitch_register:
-    opts['compute'] = 'false'
+    stitcher_options['compute'] = 'false'
 
 tplpath = join(getProperty('fiji.dir'), 'jars', 'python-imcf-libs.jar')
 log.info("Using macro templates from [%s]." % tplpath)
