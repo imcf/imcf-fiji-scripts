@@ -10,11 +10,10 @@
 #  * let the user select a file and decide how it should be split (channel,
 #    timepoints, positions, ...) and save it instead of using all open windows
 
-from ij import WindowManager as wm
-from ij.io import FileSaver
-from os import path
 import sys
 
+from ij import WindowManager as wm  # pylint: disable-msg=import-error
+from ij.io import FileSaver  # pylint: disable-msg=import-error
 
 target = str(target_dir)
 
