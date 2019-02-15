@@ -6,7 +6,6 @@
 #@ Float(label="Ratio Max / Average displacement",description="increase if tiles are placed approximately right, but are still a bit off [default=2.5]",value=2.5,min=1,max=10,stepSize=0.1,style="slider") stitch_maxavg_ratio
 #@ Float(label="Maximum absolute displacement",description="increase if some tiles are discarded completely [default=3.5]",value=3.5,min=1,max=20,stepSize=0.1,style="slider") stitch_abs_displace
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Output options</h3></html>",value="") msg_sec_output
-#x#@ String(label="Output format", choices={"ICS/IDS","OME-TIFF"}) out_format
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
 #@ Boolean(label="Show generated code",description="Print generated code to log messages for debugging") print_code
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
@@ -45,7 +44,6 @@ if imcflibs.imagej.prefs.debug_mode():
     LOG_LEVEL = "DEBUG"
 sjlogging.set_loglevel(LOG_LEVEL)
 
-out_format = "ICS/IDS"
 log.info("python-scijava-logging version: %s", sjlogging.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
 
@@ -55,8 +53,8 @@ log.info("Parameter / selection summary:")
 log.info("> Regression threshold: %s", stitch_regression)
 log.info("> Max/Avg displacement ratio: %s", stitch_maxavg_ratio)
 log.info("> Max absolute displacement: %s", stitch_abs_displace)
-log.info("> output format: %s", out_format)
 log.info("> rotation angle: %s", angle)
+
 # convert the Java file object to a string since we only need the path:
 infile = str(infile)
 
@@ -98,8 +96,6 @@ opts = {
 }
 if not stitch_register:
     opts['compute'] = 'false'
-if out_format == 'OME-TIFF':
-    opts['export_format'] = '".ome.tif"'
 
 tplpath = join(getProperty('fiji.dir'), 'jars', 'python-imcf-libs.jar')
 log.info("Using macro templates from [%s]." % tplpath)
