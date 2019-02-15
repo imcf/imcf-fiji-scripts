@@ -17,8 +17,8 @@ import io  # required due to namespace / import issues (otherwise olefile fails)
 import sys
 from os.path import basename, dirname, join
 
-from ij import IJ
 import imcflibs
+from imcflibs.imagej.misc import show_status, show_progress
 
 import micrometa
 import sjlogging
@@ -26,6 +26,7 @@ import sjlogging
 from micrometa import fluoview
 from micrometa import imagej
 from imcflibs.strtools import flatten
+import ij
 
 from java.lang.System import getProperty
 
@@ -65,21 +66,24 @@ else:
     error_exit('Unsupported input file: %s' % infile)
 
 log.info("Parsing project file: [%s]" % infile)
-IJ.showStatus("Parsing mosaics...")
+ij.IJ.showStatus("Parsing mosaics...")
+
 mosaics = MosaicClass(infile, runparser=False)
-step = 1.0 / len(mosaics.mosaictrees)
-progress = 0.0
+total = len(mosaics.mosaictrees)
+ij.IJ.showProgress(0.0)
+show_status(log, "Parsed %s / %s mosaics" % (0, total))
 for i, subtree in enumerate(mosaics.mosaictrees):
-    IJ.showProgress(progress)
+    log.info("Parsing mosaic %s...", i+1)
     try:
         mosaics.add_mosaic(subtree, i)
     except ValueError as err:
         log.warn('Skipping mosaic %s: %s', i, err)
     except RuntimeError as err:
         log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
-    progress += step
-IJ.showProgress(progress)
-IJ.showStatus("Parsed %i mosaics." % len(mosaics))
+    show_progress(log, i, total)
+    show_status(log, "Parsed %s / %s mosaics" % (i+1, total))
+show_progress(log, total, total)
+show_status(log, "Parsed %i mosaics." % total)
 
 if len(mosaics) == 0:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
@@ -116,4 +120,4 @@ imagej.write_stitching_macro(code, 'stitch_all.ijm', basedir)
 log.info('Writing tile configuration files.')
 imagej.write_all_tile_configs(mosaics)
 log.warn('Finished preprocessing, now launching the stitcher.')
-IJ.runMacro(flatten(code))
+ij.IJ.runMacro(imcflibs.strtools.flatten(code))
