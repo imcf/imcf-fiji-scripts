@@ -42,7 +42,18 @@ def error_exit(msg):
     sys.exit(msg)
 
 
-log = sjlogging.setup_logger(sjlogservice)
+# type checks and explicit pylint disabling for scijava parameters
+infile = str(infile)  # pylint: disable-msg=E0601
+stitch_register = bool(stitch_register)  # pylint: disable-msg=E0601
+stitch_regression = float(stitch_regression)  # pylint: disable-msg=E0601
+stitch_maxavg_ratio = float(stitch_maxavg_ratio)  # pylint: disable-msg=E0601
+stitch_abs_displace = float(stitch_abs_displace)  # pylint: disable-msg=E0601
+out_dir = str(out_dir)  # pylint: disable-msg=E0601,E0602
+angle = int(angle)   # pylint: disable-msg=E0601
+logservice = sjlogservice  # pylint: disable-msg=E0602
+
+
+log = sjlogging.setup_logger(logservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
     log.warn("Enabling debug logging.")
@@ -60,8 +71,6 @@ log.info("> Max/Avg displacement ratio: %s", stitch_maxavg_ratio)
 log.info("> Max absolute displacement: %s", stitch_abs_displace)
 log.info("> rotation angle: %s", angle)
 
-# convert the Java file object to a string since we only need the path:
-infile = str(infile)
 indir = dirname(infile)
 
 if infile[-9:] == '.omp2info':
@@ -95,7 +104,6 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
-out_dir = str(out_dir)
 if out_dir in ["-", "NONE"]:
     out_dir = indir
     log.info("No output directory given, using input directory [%s]." % out_dir)

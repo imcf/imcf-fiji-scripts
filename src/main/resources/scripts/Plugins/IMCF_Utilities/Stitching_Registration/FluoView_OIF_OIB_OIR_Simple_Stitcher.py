@@ -38,7 +38,15 @@ def error_exit(msg):
     sys.exit(msg)
 
 
-log = sjlogging.setup_logger(sjlogservice)
+# type checks and explicit pylint disabling for scijava parameters
+infile = str(infile)  # pylint: disable-msg=E0601
+model_file = str(model_file)  # pylint: disable-msg=E0601
+out_dir = str(out_dir)  # pylint: disable-msg=E0601,E0602
+mode = str(mode)  # pylint: disable-msg=E0601
+logservice = sjlogservice  # pylint: disable-msg=E0602
+
+
+log = sjlogging.setup_logger(logservice)
 LOG_LEVEL = "INFO"
 if imcflibs.imagej.prefs.debug_mode():
     log.warn("Enabling debug logging.")
@@ -50,8 +58,6 @@ log.info("python-scijava-logging version: %s", sjlogging.__version__)
 log.info("micrometa version: %s", micrometa.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
 
-# convert the Java file object to a string since we only need the path:
-infile = str(infile)
 indir = dirname(infile)
 
 if infile[-9:] == '.omp2info':
@@ -85,7 +91,6 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
-out_dir = str(out_dir)
 if out_dir in ["-", "NONE"]:
     out_dir = indir
     log.info("No output directory given, using input directory [%s]." % out_dir)
@@ -97,7 +102,7 @@ imcflibs.imagej.shading.process_folder(
     indir,
     'oir',
     out_dir,
-    str(model_file),
+    model_file,
     '.ics'
 )
 
