@@ -6,6 +6,7 @@
 #@ Float(label="Ratio Max / Average displacement",description="increase if tiles are placed approximately right, but are still a bit off [default=2.5]",value=2.5,min=1,max=10,stepSize=0.1,style="slider") stitch_maxavg_ratio
 #@ Float(label="Maximum absolute displacement",description="increase if some tiles are discarded completely [default=3.5]",value=3.5,min=1,max=20,stepSize=0.1,style="slider") stitch_abs_displace
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Output options</h3></html>",value="") msg_sec_output
+#@ File(label="Output directory",description="location for results and intermediate processing files, use 'NONE' or '-' for input dir",style="directory", value="NONE", persist=false) out_dir
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
@@ -86,6 +87,17 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
+outdir = str(out_dir)
+if outdir in ["-", "NONE"]:
+    outdir = indir
+    log.info("No output directory given, using input directory [%s]." % outdir)
+else:
+    log.info("Using output directory [%s] for results and temp files." % outdir)
+
+log.info('Writing tile configuration files.')
+write_tile_configs = micrometa.imagej.write_all_tile_configs
+write_tile_configs(mosaics, outdir)
+
 stitcher_options = {
     'export_format': '".ids"',
     'split_z_slices': 'false',
@@ -115,8 +127,6 @@ log.debug(imcflibs.strtools.flatten(code))
 log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
-log.info('Writing tile configuration files.')
-imagej.write_all_tile_configs(mosaics)
 micrometa.imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
 log.warn('Finished preprocessing, now launching the stitcher.')
 ij.IJ.runMacro(imcflibs.strtools.flatten(code))
