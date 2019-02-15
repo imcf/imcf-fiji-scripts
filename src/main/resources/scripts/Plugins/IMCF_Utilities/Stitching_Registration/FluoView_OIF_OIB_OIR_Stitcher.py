@@ -20,16 +20,15 @@ import sys
 from os.path import basename, dirname, join
 
 from ij import IJ
+import imcflibs
 
 import micrometa
+import sjlogging
 
 from micrometa import fluoview
 from micrometa import imagej
 from imcflibs.strtools import flatten
 
-from sjlogging import __version__ as sjlogver
-from sjlogging.logger import setup_scijava_logger
-from sjlogging.setter import set_loglevel
 from java.lang.System import getProperty
 
 
@@ -39,13 +38,18 @@ def error_exit(msg):
     sys.exit(msg)
 
 
-log = setup_scijava_logger(sjlogservice)
-set_loglevel('INFO')
+log = sjlogging.setup_logger(sjlogservice)
+LOG_LEVEL = "INFO"
+if imcflibs.imagej.prefs.debug_mode():
+    log.warn("Enabling debug logging.")
+    LOG_LEVEL = "DEBUG"
+sjlogging.set_loglevel(LOG_LEVEL)
 
 out_format = "ICS/IDS"
+log.info("python-scijava-logging version: %s", sjlogging.__version__)
+log.info("imcflibs version: %s", imcflibs.__version__)
 
 log.info("IMCF FluoView OIF / OIB / OIR Stitcher (%s).", 'UNKNOWN')
-log.debug("python-scijava-logging version: %s", sjlogver)
 log.debug("micrometa package version: %s", micrometa.__version__)
 log.info("Parameter / selection summary:")
 log.info("> Regression threshold: %s", stitch_regression)
