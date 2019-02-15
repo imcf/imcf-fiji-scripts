@@ -109,10 +109,9 @@ stitcher_options = {
 if not stitch_register:
     stitcher_options['compute'] = 'false'
 
-tplpath = join(getProperty('fiji.dir'), 'jars', 'python-imcf-libs.jar')
-log.info("Using macro templates from [%s]." % tplpath)
-basedir = dirname(infile)
-log.info("Using [%s] as base directory." % basedir)
+template_path = join(getProperty('fiji.dir'), 'jars', 'python-micrometa.jar')
+log.info("Using macro templates from [%s]." % template_path)
+log.info("Using [%s] as base directory." % indir)
 
 code = micrometa.imagej.gen_stitching_macro(
     name=mosaics.infile['dname'],
