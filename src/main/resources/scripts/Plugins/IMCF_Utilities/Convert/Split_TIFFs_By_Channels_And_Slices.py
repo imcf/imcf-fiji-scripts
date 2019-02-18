@@ -1,3 +1,9 @@
+"""Split '.tif' files in a dir by channels and z-slices and resave them."""
+
+# pylint: disable-msg=C0103
+# pylint: disable-msg=E0401
+# pylint: disable-msg=line-too-long
+
 #@ String(visibility=MESSAGE,persist=false,label="Split by Channels and Slices",value="") msg_header
 #@ File(label="Input Directory",style="directory") src_dir
 #@ Integer(label="Skip number of slices at top",value=0) skip_top
