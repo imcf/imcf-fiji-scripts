@@ -8,14 +8,20 @@
 #@ File(label="Input Directory",style="directory") src_dir
 #@ Integer(label="Skip number of slices at top",value=0) skip_top
 #@ Integer(label="Skip number of slices at bottom",value=0) skip_bottom
-#@ LogService log
 
 from ij import IJ, ImagePlus
 from ij.io import FileSaver
 from ij.plugin import ChannelSplitter
+#@ LogService sjlogservice
 
 import os
 
+
+# type checks and explicit pylint disabling for scijava parameters
+src_dir = str(src_dir)  # pylint: disable-msg=E0601
+skip_top = int(skip_top)   # pylint: disable-msg=E0601
+skip_bottom = int(skip_bottom)   # pylint: disable-msg=E0601
+log = sjlogservice  # pylint: disable-msg=E0602
 
 def split_by_c_and_z(dname, imgf, skip_top, skip_bottom):
     log.info("Processing file [%s]" % imgf)
@@ -35,7 +41,6 @@ def split_by_c_and_z(dname, imgf, skip_top, skip_bottom):
             log.info("Writing channel %s, slice %s: %s" % (ch_name, z, fout))
             FileSaver(ImagePlus(fname[0], ip)).saveAsTiff(fout)
 
-src_dir = str(src_dir)
 for file in os.listdir(src_dir):
     log.info("Processing directory [%s]" % src_dir)
     if file.endswith('.tif'):
