@@ -41,9 +41,9 @@ def split_by_c_and_z(dname, imgf, skip_top, skip_bottom):
             log.info("Writing channel %s, slice %s: %s" % (ch_name, z, fout))
             FileSaver(ImagePlus(fname[0], ip)).saveAsTiff(fout)
 
-for file in os.listdir(src_dir):
+for infile in os.listdir(src_dir):
     log.info("Processing directory [%s]" % src_dir)
-    if file.endswith('.tif'):
-        split_by_c_and_z(src_dir, file, skip_top, skip_bottom)
+    if infile.endswith('.tif'):
+        split_by_c_and_z(log, src_dir, infile, skip_top, skip_bottom)
     else:
-        log.info("Skipping [%s]" % file)
+        log.info("Skipping [%s]" % infile)
