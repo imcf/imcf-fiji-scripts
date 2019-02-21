@@ -43,7 +43,7 @@ def error_exit(msg):
     sys.exit(msg)
 
 
-# type checks and explicit pylint disabling for scijava parameters
+# type checks / default values and explicit pylint disabling for scijava params
 infile = str(infile)  # pylint: disable-msg=E0601
 stitch_register = bool(stitch_register)  # pylint: disable-msg=E0601
 stitch_regression = float(stitch_regression)  # pylint: disable-msg=E0601
