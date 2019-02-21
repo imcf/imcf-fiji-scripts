@@ -19,10 +19,16 @@ WARNING: currently existing files will be silently overwritten!
 from imcflibs.imagej.shading import correct_and_project  # pylint: disable-msg=import-error
 
 
+# type checks / default values and explicit pylint disabling for scijava params
+model = shading_model  # pylint: disable-msg=undefined-variable
+in_file = str(in_file)  # pylint: disable-msg=used-before-assignment
+proj = str(proj)  # pylint: disable-msg=used-before-assignment
+out_dir = str(out_dir)  # pylint: disable-msg=used-before-assignment
+logservice = sjlogservice  # pylint: disable-msg=undefined-variable
 
 FORMAT = ".ics"
 
 
 
 if __name__ in ['__main__', '__builtin__']:
-    correct_and_project(str(in_file), str(out_dir), shading_model, proj, FORMAT)
+    correct_and_project(in_file, out_dir, model, proj, FORMAT)

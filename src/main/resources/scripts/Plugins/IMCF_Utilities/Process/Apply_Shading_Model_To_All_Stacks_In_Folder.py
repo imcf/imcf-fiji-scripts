@@ -18,8 +18,14 @@ WARNING: existing files in the output directory will be silently overwritten!
 from imcflibs.imagej.shading import process_folder  # pylint: disable-msg=import-error
 
 
+# type checks / default values and explicit pylint disabling for scijava params
+in_dir = str(in_dir)  # pylint: disable-msg=used-before-assignment
+suffix = str(suffix)  # pylint: disable-msg=used-before-assignment
+out_dir = str(out_dir)  # pylint: disable-msg=used-before-assignment
+model_file = str(model_file)  # pylint: disable-msg=used-before-assignment
+logservice = sjlogservice  # pylint: disable-msg=undefined-variable
 
 FORMAT = ".ics"
 
 
-process_folder(str(in_dir), suffix, str(out_dir), str(model_file), FORMAT)
+process_folder(in_dir, suffix, out_dir, model_file, FORMAT)
