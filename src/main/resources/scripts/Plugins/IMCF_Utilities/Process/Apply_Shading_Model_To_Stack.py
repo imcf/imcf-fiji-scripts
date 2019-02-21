@@ -16,7 +16,7 @@ WARNING: currently existing files will be silently overwritten!
 #@ String(visibility=MESSAGE,persist=false,label="WARNING:",value="existing files in the output location will be overwritten without confirmation!") msg_warning
 #@ LogService log
 
-from imcflibs.imagej.shading import correct_and_project
+from imcflibs.imagej.shading import correct_and_project  # pylint: disable-msg=import-error
 
 
 

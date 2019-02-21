@@ -15,8 +15,8 @@ WARNING: existing files in the output directory will be silently overwritten!
 #@ LogService sjlogservice
 
 
+from imcflibs.imagej.shading import process_folder  # pylint: disable-msg=import-error
 
-from imcflibs.imagej.shading import process_folder
 
 
 FORMAT = ".ics"
