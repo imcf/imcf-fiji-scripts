@@ -11,14 +11,11 @@ directory and export the result to another directory, using the ICS2 format.
 WARNING: existing files in the output directory will be silently overwritten!
 """
 
-# import sjlogging
 
 from imcflibs.imagej.shading import process_folder
 
 
 FORMAT = ".ics"
 
-# log = sjlogging.logger.setup_scijava_logger(sjlogservice)
-# sjlogging.setter.set_loglevel('INFO')
 
 process_folder(str(in_dir), suffix, str(out_dir), str(model_file), FORMAT)

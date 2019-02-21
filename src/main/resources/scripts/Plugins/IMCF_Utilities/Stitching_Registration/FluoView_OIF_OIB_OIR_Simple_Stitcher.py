@@ -26,7 +26,6 @@ import imcflibs
 from imcflibs.imagej.misc import show_status, show_progress
 
 import micrometa
-import sjlogging
 import ij
 
 from java.lang.System import getProperty
@@ -46,15 +45,9 @@ mode = str(mode)  # pylint: disable-msg=E0601
 logservice = sjlogservice  # pylint: disable-msg=E0602
 
 
-log = sjlogging.setup_logger(logservice)
-LOG_LEVEL = "INFO"
-if imcflibs.imagej.prefs.debug_mode():
-    log.warn("Enabling debug logging.")
-    LOG_LEVEL = "DEBUG"
-sjlogging.set_loglevel(LOG_LEVEL)
+log = imcflibs.imagej.sjlog.scijava_logger(logservice)
 
 log.warn("%s, version: %s" % (basename(__file__), '${project.version}'))
-log.info("python-scijava-logging version: %s", sjlogging.__version__)
 log.info("micrometa version: %s", micrometa.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
 

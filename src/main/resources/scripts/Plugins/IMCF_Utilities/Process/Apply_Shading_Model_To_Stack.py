@@ -13,18 +13,13 @@ The model needs to be opened in ImageJ before running the script.
 WARNING: currently existing files will be silently overwritten!
 """
 
-# import logging
 
 from imcflibs.imagej.shading import correct_and_project
 
-# import sjlogging
 
 
 FORMAT = ".ics"
 
-# log = sjlogging.logger.setup_scijava_logger(sjlogservice)
-# sjlogging.setter.set_loglevel('INFO')
-# log = logging.getLogger()
 
 
 if __name__ in ['__main__', '__builtin__']:
