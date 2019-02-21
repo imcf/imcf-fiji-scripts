@@ -16,6 +16,7 @@ WARNING: currently existing files will be silently overwritten!
 #@ String(visibility=MESSAGE,persist=false,label="WARNING:",value="existing files in the output location will be overwritten without confirmation!") msg_warning
 #@ LogService log
 
+import imcflibs  # pylint: disable-msg=import-error
 from imcflibs.imagej.shading import correct_and_project  # pylint: disable-msg=import-error
 
 
@@ -28,7 +29,8 @@ logservice = sjlogservice  # pylint: disable-msg=undefined-variable
 
 FORMAT = ".ics"
 
-
+log = imcflibs.imagej.sjlog.scijava_logger(logservice)
+log.info("Processing '%s'...", in_file)
 
 if __name__ in ['__main__', '__builtin__']:
     correct_and_project(in_file, out_dir, model, proj, FORMAT)
