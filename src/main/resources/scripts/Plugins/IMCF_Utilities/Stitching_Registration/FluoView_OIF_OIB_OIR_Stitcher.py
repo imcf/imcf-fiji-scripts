@@ -14,6 +14,8 @@
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Output options</h3></html>",value="") msg_sec_output
 #@ File(label="Output directory",description="location for results and intermediate processing files, type 'NONE' or '-' to use input dir",style="directory", value="NONE", persist=false) out_dir
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
+#@ String(label="Operation mode",choices={"FULL - preprocess + fuse","PREPROCESS ONLY - no fusion"}) mode
+
 #@ String(visibility=MESSAGE,label="<html><br/><h3>Citation note</h3></html>",value="<html><br/>Stitching is based on a publication, if you're using it for your research please <br>be so kind to cite it:<br><a href=''>Preibisch et al., Bioinformatics (2009)</a></html>",persist=false) msg_citation
 #@ LogService sjlogservice
 
@@ -49,6 +51,7 @@ stitch_maxavg_ratio = float(stitch_maxavg_ratio)  # pylint: disable-msg=E0601
 stitch_abs_displace = float(stitch_abs_displace)  # pylint: disable-msg=E0601
 out_dir = str(out_dir)  # pylint: disable-msg=E0601,E0602
 angle = int(angle)   # pylint: disable-msg=E0601
+mode = str(mode)  # pylint: disable-msg=E0601
 logservice = sjlogservice  # pylint: disable-msg=E0602
 
 
@@ -136,5 +139,8 @@ log.debug("============= end of generated  macro code =============")
 
 log.info('Writing stitching macro.')
 micrometa.imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
-log.warn('Finished preprocessing, now launching the stitcher.')
-ij.IJ.runMacro(imcflibs.strtools.flatten(code))
+if mode[:4] == 'FULL':
+    log.info('Finished preprocessing, now launching the stitcher.')
+    ij.IJ.runMacro(imcflibs.strtools.flatten(code))
+else:
+    log.warn('PREPROCESSING mode selected, NOT running the stitcher now!')
