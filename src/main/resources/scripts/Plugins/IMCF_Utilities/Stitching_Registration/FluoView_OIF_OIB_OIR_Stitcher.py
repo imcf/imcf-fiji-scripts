@@ -1,7 +1,7 @@
 """Wrapper script to stitch Olympus OIF / OIB / OIR mosaics."""
 
-# pylint: disable-msg=C0103
-# pylint: disable-msg=E0401
+# pylint: disable-msg=invalid-name
+# pylint: disable-msg=import-error
 # pylint: disable-msg=line-too-long
 
 #@ String(visibility=MESSAGE,persist=false,label="<html><div align='center'><h2>Stitching of<br>Olympus FluoView mosaics<br><br>OIF / OIB / OIR</h2></div></html>",value="<html><img src='http://imagej.net/_images/5/5e/Tiles-Overlay.png'></html>") msg_header
