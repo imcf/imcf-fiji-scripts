@@ -12,7 +12,7 @@
 #@ Float(label="Ratio Max / Average displacement",description="increase if tiles are placed approximately right, but are still a bit off [default=2.5]",value=2.5,min=1,max=10,stepSize=0.1,style="slider") stitch_maxavg_ratio
 #@ Float(label="Maximum absolute displacement",description="increase if some tiles are discarded completely [default=3.5]",value=3.5,min=1,max=20,stepSize=0.1,style="slider") stitch_abs_displace
 #@ String(visibility=MESSAGE,persist=false,label="<html><br/><br/><h3>Output options</h3></html>",value="") msg_sec_output
-#@ File(label="Output directory",description="location for results and intermediate processing files, type 'NONE' or '-' to use input dir",style="directory", value="NONE", persist=false) out_dir
+#@ File(label="Output directory",description="location for results and intermediate processing files, specify 'NONE' or '-' to use input dir",style="directory", value="NONE", persist=false) out_dir
 #@ Integer(label="Rotate result (clock-wise)", style="slider", min=0, max=270, value=0, stepSize=90) angle
 #@ String(label="Operation mode",choices={"FULL - preprocess + fuse","PREPROCESS ONLY - no fusion"}) mode
 
