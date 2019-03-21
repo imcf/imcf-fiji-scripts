@@ -57,6 +57,8 @@ log.info("micrometa version: %s", micrometa.__version__)
 log.info("imcflibs version: %s", imcflibs.__version__)
 
 indir = dirname(infile)
+out_dir = imcflibs.pathtools.derive_out_dir(indir, out_dir)
+
 
 if infile[-9:] == '.omp2info':
     MosaicClass = micrometa.fluoview.FluoView3kMosaic
@@ -88,12 +90,6 @@ show_status(log, "Parsed %i mosaics." % total)
 if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
-
-if out_dir in ["-", "NONE"]:
-    out_dir = indir
-    log.info("No output directory given, using input directory [%s]." % out_dir)
-else:
-    log.info("Using directory [%s] for results and temp files." % out_dir)
 
 log.info("Pre-processing stacks: shading correction and projections...")
 imcflibs.imagej.shading.process_folder(
