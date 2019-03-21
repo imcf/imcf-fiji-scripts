@@ -32,12 +32,7 @@ from java.lang.System import getProperty
 # type checks / default values and explicit pylint disabling for scijava params
 infile = str(infile)  # pylint: disable-msg=E0601
 model_file = str(model_file)  # pylint: disable-msg=E0601
-stitch_register = False
-stitch_regression = 0.3
-stitch_maxavg_ratio = 2.5
-stitch_abs_displace = 3.5
 out_dir = str(out_dir)  # pylint: disable-msg=E0601,E0602
-angle = 0
 mode = str(mode)  # pylint: disable-msg=E0601
 logservice = sjlogservice  # pylint: disable-msg=E0602
 
@@ -67,19 +62,7 @@ write_tile_configs(mosaics, out_dir, '.ics')
 write_tile_configs(mosaics, out_dir, '-avg.ics', force_2d=True)
 write_tile_configs(mosaics, out_dir, '-max.ics', force_2d=True)
 
-
-stitcher_options = {
-    'export_format': '".ids"',
-    'split_z_slices': 'false',
-    'rotation_angle': angle,
-    'stitch_regression': stitch_regression,
-    'stitch_maxavg_ratio': stitch_maxavg_ratio,
-    'stitch_abs_displace': stitch_abs_displace,
-}
-if not stitch_register:
-    stitcher_options['compute'] = 'false'
-
-
+stitcher_options = {'compute': 'false'}
 code = imcflibs.imagej.stitching.gen_macro(
     mosaics,
     out_dir,
