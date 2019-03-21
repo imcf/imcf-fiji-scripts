@@ -19,14 +19,11 @@
 # fail as 'io' is by then already populated with the corresponding Java class:
 import io  # pylint: disable-msg=unused-import
 
-import sys
 from os.path import basename, dirname, join
 
 import imcflibs
 import micrometa
 import ij
-
-from java.lang.System import getProperty
 
 
 # type checks / default values and explicit pylint disabling for scijava params
