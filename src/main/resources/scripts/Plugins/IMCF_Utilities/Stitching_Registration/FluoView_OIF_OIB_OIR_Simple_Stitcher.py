@@ -91,7 +91,6 @@ if not mosaics:
     error_exit("Couldn't find any (valid) mosaics in the project file!")
 log.info(mosaics.summarize())
 
-log.info("Pre-processing stacks: shading correction and projections...")
 imcflibs.imagej.shading.process_folder(
     indir,
     'oir',
