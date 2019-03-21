@@ -29,18 +29,10 @@ import sys
 from os.path import basename, dirname, join
 
 import imcflibs
-from imcflibs.imagej.misc import show_status, show_progress
-
 import micrometa
 import ij
 
 from java.lang.System import getProperty
-
-
-def error_exit(msg):
-    """Convenience wrapper to log an error and exit then."""
-    log.error(msg)
-    sys.exit(msg)
 
 
 # type checks / default values and explicit pylint disabling for scijava params
@@ -70,36 +62,7 @@ log.info("> rotation angle: %s", angle)
 indir = dirname(infile)
 out_dir = imcflibs.pathtools.derive_out_dir(indir, out_dir)
 
-if infile[-9:] == '.omp2info':
-    MosaicClass = micrometa.fluoview.FluoView3kMosaic
-elif infile[-4:] == '.log':
-    MosaicClass = micrometa.fluoview.FluoViewMosaic
-else:
-    error_exit('Unsupported input file: %s' % infile)
-
-log.info("Parsing project file: [%s]" % infile)
-ij.IJ.showStatus("Parsing mosaics...")
-
-mosaics = MosaicClass(infile, runparser=False)
-total = len(mosaics.mosaictrees)
-ij.IJ.showProgress(0.0)
-show_status(log, "Parsed %s / %s mosaics" % (0, total))
-for i, subtree in enumerate(mosaics.mosaictrees):
-    log.info("Parsing mosaic %s...", i+1)
-    try:
-        mosaics.add_mosaic(subtree, i)
-    except (ValueError, IOError) as err:
-        log.warn('Skipping mosaic %s: %s', i, err)
-    except RuntimeError as err:
-        log.warn('Error parsing mosaic %s, SKIPPING: %s', i, err)
-    show_progress(log, i, total)
-    show_status(log, "Parsed %s / %s mosaics" % (i+1, total))
-show_progress(log, total, total)
-show_status(log, "Parsed %i mosaics." % total)
-
-if not mosaics:
-    error_exit("Couldn't find any (valid) mosaics in the project file!")
-log.info(mosaics.summarize())
+mosaics = imcflibs.imagej.stitching.process_fluoview_project(infile)
 
 
 log.info('Writing tile configuration files.')
