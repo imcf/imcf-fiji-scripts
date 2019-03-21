@@ -80,24 +80,13 @@ stitcher_options = {
 if not stitch_register:
     stitcher_options['compute'] = 'false'
 
-template_path = join(getProperty('fiji.dir'), 'jars', 'python-micrometa.jar')
-log.info("Using macro templates from [%s]." % template_path)
-log.info("Using [%s] as base directory." % indir)
-
-code = micrometa.imagej.gen_stitching_macro(
-    name=mosaics.infile['dname'],
-    path=out_dir,
-    tplpfx='templates/imagej-macro/stitching',
-    tplpath=template_path,
-    opts=stitcher_options
+code = imcflibs.imagej.stitching.gen_macro(
+    mosaics,
+    out_dir,
+    join(indir, 'stitch_all.ijm'),
+    stitcher_options
 )
 
-log.debug("============= generated macro code =============")
-log.debug(imcflibs.strtools.flatten(code))
-log.debug("============= end of generated  macro code =============")
-
-log.info('Writing stitching macro.')
-micrometa.imagej.write_stitching_macro(code, 'stitch_all.ijm', indir)
 if mode[:4] == 'FULL':
     log.info('Finished preprocessing, now launching the stitcher.')
     ij.IJ.runMacro(imcflibs.strtools.flatten(code))
