@@ -6,6 +6,17 @@
 #@ ImagePlus (label="Pre-segmentation mask image") tst_mask
 */
 
+function lpad(str, len) {
+	/* left-pad a string with zeros to a given total length */
+	cur_len = lengthOf("" + str);
+    if (cur_len < len) {
+        for (i=0; i<(len-cur_len); i++) {
+            str = "0" + str;
+        }
+    }
+    return str;
+}
+
 
 roiManager("reset");
 run("Select None");
@@ -20,18 +31,32 @@ getDimensions(width, height, _, _, _);
 
 size = (width/15) * (height/10) / 4;
 print("Minimum section size (in square pixels) estimated from image: " + size);
-run("Analyze Particles...", "size=" + size + "-Infinity show=Nothing pixel add");
+run("Analyze Particles...", "size=" + size + "-Infinity show=[Count Masks] pixel add");
+tst_labels = getImageID();
+rename("tst-sections-label-mask");
+run("Enhance Contrast", "saturated=0.01");
+run("glasbey on dark");
+
 
 for (i=0; i < roiManager("count"); i++) {
-	roiManager("select", i);
-	Roi.getBounds(x, y, width, height);
+    roiManager("select", i);
+    // first rename the ROI using its value from the label image:
+    Roi.getCoordinates(xpoints, ypoints);
+    value = getPixel(xpoints[0], ypoints[0]);
+    roiManager("rename", lpad(value, 5));
+
+    // now replace the ROI by its bounding box, adding the padding requested:
+    Roi.getBounds(x, y, width, height);
 	// print(x + " " + y + " " + width + " " + height);
 	makeRectangle(x-padding, y-padding, width+padding*2, height+padding*2);
 	roiManager("update");
 }
-roiManager("deselect");
+
 roiManager("sort");
 // close();
 
-selectImage(tst_slide);
+selectImage(tst_mask);
+close();
+
+selectImage(tst_labels);
 roiManager("show all with labels");
