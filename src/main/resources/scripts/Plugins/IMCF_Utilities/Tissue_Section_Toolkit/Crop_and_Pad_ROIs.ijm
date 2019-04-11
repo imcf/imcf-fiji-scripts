@@ -49,19 +49,21 @@ Array.getStatistics(roi_heights, _, max_height, _, _);
 print("maximum bounds size: " + max_width + " x " + max_height);
 
 // now process all ROIs, duplicate them and optionally pad the result
+print("Processing " + nrois + " ROIs...");
 nroi_chars = lengthOf("" + nrois);
+out_pfx = out_dir + "/" + title + "_roi-";
 for (i=0; i < nrois; i++) {
-	print("Processing ROI " + i);
+	// print("Processing ROI " + i);
 	run("Select None");
 	roiManager("select", i);
 	run("Duplicate...", "duplicate");
 	if (pad_crops == true) {
 		run("Canvas Size...", "width=" + max_width + " height=" + max_height + " position=Center zero");		
 	}
-	saveAs("Tiff", out_dir + "/" + title + "_roi-" + lpad(i, nroi_chars) + ".tif");
+	saveAs("Tiff", out_pfx + lpad(i, nroi_chars) + ".tif");
 	close();
 	selectImage(tst_slide_id);
 }
 
-print("--- FINISHED ---");
+print("Processed " + nrois + " ROIs.");
 
