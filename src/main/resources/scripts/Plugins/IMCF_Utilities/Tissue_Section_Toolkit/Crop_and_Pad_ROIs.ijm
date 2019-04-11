@@ -67,3 +67,4 @@ for (i=0; i < nrois; i++) {
 
 print("Processed " + nrois + " ROIs.");
 
+print("tst:padded-sections:firstfile:" + out_pfx + lpad(0, nroi_chars) + ".tif");
