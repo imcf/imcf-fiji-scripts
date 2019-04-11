@@ -17,6 +17,7 @@ function lpad(str, len) {
     return str;
 }
 
+setBatchMode(true);
 
 selectImage(tst_slide);
 tst_slide_id = getImageID();
@@ -65,6 +66,7 @@ for (i=0; i < nrois; i++) {
 	selectImage(tst_slide_id);
 }
 
+setBatchMode("exit and display");
 print("Processed " + nrois + " ROIs.");
 
 print("tst:padded-sections:firstfile:" + out_pfx + lpad(0, nroi_chars) + ".tif");
