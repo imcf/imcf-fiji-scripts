@@ -18,4 +18,10 @@ run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] fram
 t0 = getTime();
 run("HyperStackReg", "transformation=[Rigid Body] " + param + " show");
 print("HyperStackReg took about " + floor((getTime() - t0) / 1000) + " seconds");
+tst_stack_registered = getImageID();
+
+selectImage(tst_stack);
+run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
+rename("NON-REGISTERED STACK");
+selectImage(tst_stack_registered);
 run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
