@@ -4,6 +4,8 @@
 #@ ImagePlus tst_stack
 */
 
+selectImage(tst_stack);
+
 param = "";
 channels = split(hsr_ch, ",");
 for (i=0; i<channels.length; i++) {
