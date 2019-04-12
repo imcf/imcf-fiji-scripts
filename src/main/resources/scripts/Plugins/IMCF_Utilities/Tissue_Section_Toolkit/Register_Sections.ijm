@@ -14,5 +14,7 @@ for (i=0; i<channels.length; i++) {
 
 selectImage(tst_stack);
 run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
+t0 = getTime();
 run("HyperStackReg", "transformation=[Rigid Body] " + param + " show");
+print("HyperStackReg took about " + floor((getTime() - t0) / 1000) + " seconds");
 run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
