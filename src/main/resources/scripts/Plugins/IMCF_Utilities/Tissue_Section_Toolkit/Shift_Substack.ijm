@@ -4,6 +4,20 @@
 #@ ImagePlus tst_stack
 */
 
+/*
+This macro is expecting a Hyperstack with >=2 z-slices and a straight line
+selection. It will split the stack at the current slice (where the current slice
+will belong to the second substack, which also requires it to be at least at
+z-position "2") and shift the second substack (translation only) by the distance
+defined through the line selection.
+The idea is to allow the user to correct for "jumps" in the stack alignment by
+interactively going to the "last good" z-slice, drawing a line starting at any
+preferred landmark (line-end position doesn't matter), then switching to the
+next slice, adjusting the end of the line to match the corresponding location
+of that landmark on this slice. Running the macro will then shift the "lower"
+part of the stack in X/Y by the distance defined through the line's end points.
+*/
+
 selectImage(tst_stack);
 title_orig = getTitle();
 
