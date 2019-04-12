@@ -11,6 +11,7 @@ channels = split(hsr_ch, ",");
 for (i=0; i<channels.length; i++) {
 	param += " channel" + channels[i];
 }
+print("Running HyperStackReg on:" + param);
 
 selectImage(tst_stack);
 run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
