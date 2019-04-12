@@ -11,7 +11,6 @@ title = getTitle();
 print("Using image (" + imp + ") as slide image: " + title);
 getDimensions(width, height, _, _, _);
 run("Z Project...", "projection=[Sum Slices]");
-id_sum = getImageID();
 setAutoThreshold(method + " dark");
 setOption("BlackBackground", true);
 run("Convert to Mask");
