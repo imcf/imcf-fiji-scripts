@@ -161,3 +161,5 @@ roiManager("show all with labels");
 
 selectImage(tst_labels);
 roiManager("show all with labels");
+
+print("\n\n--- Sort ROIs in Columns COMPLETED ---\n\n");

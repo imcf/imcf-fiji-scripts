@@ -31,3 +31,7 @@ if (height1 > height2) {
 
 run("Combine...", "stack1=tst-left stack2=tst-right");
 rename(title1 + "--" + title2);
+tst_slide = getImageID();
+
+print("tst:combined-slides:id:" + tst_slide);
+print("\n\n--- Combine Slides COMPLETED ---\n\n");

@@ -45,3 +45,6 @@ imgf = substring(imgf, lastIndexOf(imgf, "/")+1, lastIndexOf(imgf, "."));
 // strip special suffix from crop+pad macro:
 imgf = replace(imgf, "_roi-0", "");
 rename(imgf);
+
+print("tst:hyperstack-sections:id:" + getImageID());
+print("\n\n--- Sections to Hyperstack COMPLETED ---\n\n");

@@ -60,3 +60,6 @@ close();
 
 selectImage(tst_labels);
 roiManager("show all with labels");
+
+print("tst:tissue-labels:id:" + tst_mask);
+print("\n\n--- Masks To Segmentation COMPLETED ---\n\n");

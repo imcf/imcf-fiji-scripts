@@ -70,3 +70,4 @@ setBatchMode("exit and display");
 print("Processed " + nrois + " ROIs.");
 
 print("tst:padded-sections:firstfile:" + out_pfx + lpad(0, nroi_chars) + ".tif");
+print("\n\n--- Crop and Pad ROIs COMPLETED ---\n\n");

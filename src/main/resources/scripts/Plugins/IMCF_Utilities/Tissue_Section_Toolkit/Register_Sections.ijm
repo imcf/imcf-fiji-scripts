@@ -25,3 +25,6 @@ run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] fram
 rename("NON-REGISTERED STACK");
 selectImage(tst_stack_registered);
 run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
+
+print("tst:hyperstack-registered:id:" + tst_stack_registered);
+print("\n\n--- Register Sections COMPLETED ---\n\n");

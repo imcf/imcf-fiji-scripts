@@ -22,3 +22,7 @@ for (i=0; i < erode_steps; i++) {
 	run("Erode");
 }
 run("Fill Holes");
+tst_mask = getImageID();
+
+print("tst:tissue-masks:id:" + tst_mask);
+print("\n\n--- Create Tissue Masks COMPLETED ---\n\n");
