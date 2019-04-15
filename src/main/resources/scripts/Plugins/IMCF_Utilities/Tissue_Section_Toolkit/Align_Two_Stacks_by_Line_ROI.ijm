@@ -53,6 +53,21 @@ function getStraightLineCenter() {
 }
 
 
+function adjustCanvasSize(imp, delta_x, delta_y) {
+    if ((delta_x == 0) && (delta_y == 0)) {
+        return;
+    }
+    imp_cur = getImageID();
+    selectImage(imp);
+    getDimensions(sizex, sizey, _, _, _);
+    param  = "width=" + (sizex + delta_x);
+    param += " height=" + (sizey + delta_y);
+    param += " position=Bottom-Right zero";
+    run("Canvas Size...", param);
+    selectImage(imp_cur);
+}
+
+
 selectImage(imp_ref);
 angle_ref = getStraightLineAngle();
 center_ref = getStraightLineCenter();
@@ -70,9 +85,33 @@ print("Offset:" +
 // rotate the image (note the space after the dots!):
 run("Rotate... ", "angle=" + angle_delta + " interpolation=Bilinear");
 // rotate the selection:
-run("Rotate...", "  angle=" + angle_delta);
+run("Rotate...", "angle=" + angle_delta);
 
 center_aligned = getStraightLineCenter();
 getDimensions(sizex_aligned, sizey_aligned, _, _, _);
 selectImage(imp_ref);
 getDimensions(sizex_ref, sizey_ref, _, _, _);
+
+cx_delta = center_ref[0] - center_aligned[0];
+cy_delta = center_ref[1] - center_aligned[1];
+
+shift_ref = newArray(0, 0);
+shift_aligned = newArray(0, 0);
+if (cx_delta < 0) {
+	// shift reference to the right:
+	shift_ref[0] = abs(cx_delta);
+} else {
+	// shift aligned to the right:
+	shift_aligned[0] = cx_delta;
+}
+
+if (cy_delta < 0) {
+	// shift reference downwards:
+	shift_ref[1] = abs(cy_delta);
+} else {
+	// shift aligned downwards:
+	shift_aligned[1] = cy_delta;
+}
+
+adjustCanvasSize(imp_ref, shift_ref[0], shift_ref[1]);
+adjustCanvasSize(imp_toalign, shift_aligned[0], shift_aligned[1]);
