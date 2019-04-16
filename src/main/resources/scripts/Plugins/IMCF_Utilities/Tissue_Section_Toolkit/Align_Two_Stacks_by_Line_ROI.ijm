@@ -53,7 +53,7 @@ function getStraightLineCenter() {
 }
 
 
-function adjustCanvasSize(imp, delta_x, delta_y) {
+function shiftImageXY(imp, delta_x, delta_y) {
     if ((delta_x == 0) && (delta_y == 0)) {
         return;
     }
@@ -113,5 +113,5 @@ if (cy_delta < 0) {
 	shift_aligned[1] = cy_delta;
 }
 
-adjustCanvasSize(imp_ref, shift_ref[0], shift_ref[1]);
-adjustCanvasSize(imp_toalign, shift_aligned[0], shift_aligned[1]);
+shiftImageXY(imp_ref, shift_ref[0], shift_ref[1]);
+shiftImageXY(imp_toalign, shift_aligned[0], shift_aligned[1]);
