@@ -91,6 +91,24 @@ function shiftImageXY(imp, delta_x, delta_y) {
 }
 
 
+function makeCanvasesSameSize(imp1, imp2) {
+    imp_cur = getImageID();
+    selectImage(imp1);
+    getDimensions(sizex1, sizey1, _, _, _);
+    selectImage(imp2);
+    getDimensions(sizex2, sizey2, _, _, _);
+    sizex_final = maxOf(sizex1, sizex2);
+    sizey_final = maxOf(sizey1, sizey2);
+    param  = "width=" + sizex_final;
+    param += " height=" + sizey_final;
+    param += " position=Top-Left zero";
+    run("Canvas Size...", param);
+    selectImage(imp1);
+    run("Canvas Size...", param);
+    selectImage(imp_cur);
+}
+
+
 angle_ref = getStraightLineAngle(imp_ref);
 center_ref = getStraightLineCenter(imp_ref);
 
@@ -138,3 +156,4 @@ Array.print(shift_aligned);
 
 shiftImageXY(imp_ref, shift_ref[0], shift_ref[1]);
 shiftImageXY(imp_toalign, shift_aligned[0], shift_aligned[1]);
+makeCanvasesSameSize(imp_ref, imp_toalign);
