@@ -1,6 +1,8 @@
 # Maven build / release files
 pom.xml.releaseBackup
 target/
+bin/
+.project
 
 # stuff to ignore explicitly by name, mostly for porting old code
 *.orig-gitignore.*
