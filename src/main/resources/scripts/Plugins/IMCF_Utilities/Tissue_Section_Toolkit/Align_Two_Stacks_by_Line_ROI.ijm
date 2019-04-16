@@ -59,7 +59,9 @@ function shiftImageXY(imp, delta_x, delta_y) {
     }
     imp_cur = getImageID();
     selectImage(imp);
+    title = getTitle();
     getDimensions(sizex, sizey, _, _, _);
+    print("Enlarging '" + title + "' [" + imp + "] by " + delta_x + "/" + delta_y);
     param  = "width=" + (sizex + delta_x);
     param += " height=" + (sizey + delta_y);
     param += " position=Bottom-Right zero";
@@ -77,8 +79,7 @@ angle_toalign = getStraightLineAngle();
 center_toalign = getStraightLineCenter();
 
 angle_delta = angle_toalign - angle_ref;
-print("Angle delta: " + angle_delta);
-print("Offset:" +
+print("Angle delta: " + angle_delta + "  -  center offset: " +
       " x=" + (center_ref[0] - center_toalign[0]) +
       " y=" + (center_ref[1] - center_toalign[1]));
 
@@ -112,6 +113,8 @@ if (cy_delta < 0) {
 	// shift aligned downwards:
 	shift_aligned[1] = cy_delta;
 }
+Array.print(shift_ref);
+Array.print(shift_aligned);
 
 shiftImageXY(imp_ref, shift_ref[0], shift_ref[1]);
 shiftImageXY(imp_toalign, shift_aligned[0], shift_aligned[1]);
