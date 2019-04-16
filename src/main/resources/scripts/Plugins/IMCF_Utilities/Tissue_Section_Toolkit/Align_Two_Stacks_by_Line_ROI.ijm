@@ -1,4 +1,5 @@
 /*
+#@ String (visibility=MESSAGE,label="Prerequisites:",value="two Hyperstacks with a line-selection each",persist=false) msg
 #@ ImagePlus (label="Reference Image",description="will be kept as-is") imp_ref
 #@ ImagePlus (label="Image to be aligned",description="will be aligned to reference image") imp_toalign
 */
