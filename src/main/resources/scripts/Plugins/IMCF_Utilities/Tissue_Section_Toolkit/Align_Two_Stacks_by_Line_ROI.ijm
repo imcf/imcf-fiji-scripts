@@ -122,7 +122,7 @@ print("Angle delta: " + angle_delta + "  -  center offset: " +
 
 selectImage(imp_toalign);
 // rotate the image (note the space after the dots!):
-run("Rotate... ", "angle=" + angle_delta + " interpolation=Bilinear");
+run("Rotate... ", "angle=" + angle_delta + " interpolation=Bilinear enlarge");
 // rotate the selection:
 run("Rotate...", "angle=" + angle_delta);
 
