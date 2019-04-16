@@ -84,11 +84,13 @@ tst_stack_shifted = getImageID();
 selectImage(tst_stack);
 if (keep_orig) {
 	rename("PRE-SHIFTED__" + getTitle());
+	Stack.setSlice(cur_z);
 } else {
 	close();
 }
 
 selectImage(tst_stack_shifted);
+Stack.setSlice(cur_z);
 
 setBatchMode("exit and display");
 
