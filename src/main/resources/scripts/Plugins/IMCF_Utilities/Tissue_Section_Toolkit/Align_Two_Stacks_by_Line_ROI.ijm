@@ -3,6 +3,19 @@
 #@ ImagePlus (label="Image to be aligned",description="will be aligned to reference image") imp_toalign
 */
 
+
+function checkLineSelectionPresent(imp) {
+    imp_cur = getImageID();
+    selectImage(imp);
+    if (selectionType() != 5) {
+        exitmsg = "Straight line selection required!";
+        print(exitmsg);
+        exit(exitmsg);
+    }    
+    selectImage(imp_cur);
+}
+
+
 function getAngle(x1, y1, x2, y2) {
     /*
      * Calculate the angle (ccw) of the given line against the x-axis.
@@ -36,6 +49,7 @@ function getAngle(x1, y1, x2, y2) {
 
 
 function getStraightLineAngle(imp) {
+    checkLineSelectionPresent(imp);
     imp_cur = getImageID();
     selectImage(imp);
     getSelectionCoordinates(xpoints, ypoints);
@@ -46,6 +60,7 @@ function getStraightLineAngle(imp) {
 
 
 function getStraightLineCenter(imp) {
+    checkLineSelectionPresent(imp);
     imp_cur = getImageID();
     selectImage(imp);
     center = newArray(2);
