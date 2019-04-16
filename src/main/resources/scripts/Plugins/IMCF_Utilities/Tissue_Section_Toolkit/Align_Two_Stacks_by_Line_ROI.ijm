@@ -109,6 +109,7 @@ function makeCanvasesSameSize(imp1, imp2) {
     selectImage(imp_cur);
 }
 
+setBatchMode(true);
 
 angle_ref = getStraightLineAngle(imp_ref);
 center_ref = getStraightLineCenter(imp_ref);
@@ -158,3 +159,5 @@ Array.print(shift_aligned);
 shiftImageXY(imp_ref, shift_ref[0], shift_ref[1]);
 shiftImageXY(imp_toalign, shift_aligned[0], shift_aligned[1]);
 makeCanvasesSameSize(imp_ref, imp_toalign);
+
+setBatchMode("exit and display");
