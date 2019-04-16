@@ -35,20 +35,26 @@ function getAngle(x1, y1, x2, y2) {
 }
 
 
-function getStraightLineAngle() {
+function getStraightLineAngle(imp) {
+    imp_cur = getImageID();
+    selectImage(imp);
     getSelectionCoordinates(xpoints, ypoints);
     angle = getAngle(xpoints[0], ypoints[0], xpoints[1], ypoints[1]);
+    selectImage(imp_cur);
     return angle;
 }
 
 
-function getStraightLineCenter() {
+function getStraightLineCenter(imp) {
+    imp_cur = getImageID();
+    selectImage(imp);
     center = newArray(2);
     getSelectionCoordinates(xpoints, ypoints);
     xdelta = xpoints[0] - xpoints[1];
     ydelta = ypoints[0] - ypoints[1];
     center[0] = floor(xpoints[0] + (xdelta/2));
     center[1] = floor(ypoints[0] + (ydelta/2));
+    selectImage(imp_cur);
     return center;
 }
 
@@ -70,25 +76,24 @@ function shiftImageXY(imp, delta_x, delta_y) {
 }
 
 
-selectImage(imp_ref);
-angle_ref = getStraightLineAngle();
-center_ref = getStraightLineCenter();
+angle_ref = getStraightLineAngle(imp_ref);
+center_ref = getStraightLineCenter(imp_ref);
 
-selectImage(imp_toalign);
-angle_toalign = getStraightLineAngle();
-center_toalign = getStraightLineCenter();
+angle_toalign = getStraightLineAngle(imp_toalign);
+center_toalign = getStraightLineCenter(imp_toalign);
 
 angle_delta = angle_toalign - angle_ref;
 print("Angle delta: " + angle_delta + "  -  center offset: " +
       " x=" + (center_ref[0] - center_toalign[0]) +
       " y=" + (center_ref[1] - center_toalign[1]));
 
+selectImage(imp_toalign);
 // rotate the image (note the space after the dots!):
 run("Rotate... ", "angle=" + angle_delta + " interpolation=Bilinear");
 // rotate the selection:
 run("Rotate...", "angle=" + angle_delta);
 
-center_aligned = getStraightLineCenter();
+center_aligned = getStraightLineCenter(imp_toalign);
 getDimensions(sizex_aligned, sizey_aligned, _, _, _);
 selectImage(imp_ref);
 getDimensions(sizex_ref, sizey_ref, _, _, _);
