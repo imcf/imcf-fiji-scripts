@@ -8,12 +8,12 @@
  * Modified By: Laurent Guerard
  * -----
  * HISTORY:
- * Date        	By	Comments
- * ------------	---	---------------------------------------------------------
+ * Date         By  Comments
+ * ------------ --- ---------------------------------------------------------
  * 2020-05-08   LG  Added log
- * 2019-09-27	LG	1st version. Working.
+ * 2019-09-27   LG  1st version. Working.
  */
- 
+
 import com.opencsv.CSVWriter
 import ij.IJ
 import ij.ImagePlus
@@ -60,8 +60,8 @@ nbr_ROI = rm.count
 try {
     assert nbr_ROI == 3 : "There should be 3 ROIs"
 } catch (AssertionError e) {
-	println "Number of ROIs is incorrect, script will stop. " + e.getMessage()
-	return
+    println "Number of ROIs is incorrect, script will stop. " + e.getMessage()
+    return
 }
 
 // Make the measurements on the image
