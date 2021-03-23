@@ -4,7 +4,7 @@
  * Email: laurent.guerard@unibas.ch
  * Creation Date: Friday, 27th September 2019 3:32:35 pm
  * -----
- * Last Modified: Friday, 27th September 2019 3:33:56 pm
+ * Last Modified: Tuesday, 23rd March 2021 16:58:59
  * Modified By: Laurent Guerard
  * -----
  * HISTORY:
@@ -13,6 +13,17 @@
  * 2020-05-08   LG  Added log
  * 2019-09-27   LG  1st version. Working.
  */
+
+// ImageJ script to make FRAP measurements from a timelapse image
+
+// This script requires a 3D image to be opened (2D + time).
+// It has the option to do registration in case the sample moved a bit. Once
+// started, the script will ask for 3 ROIS (FRAP, whole cell, background) in the
+// correct order and will measure the mean intensity in these 3 ROIs for all
+// timepoints.
+// Wil then save the result in a CSV which can be directly used in easyFRAP to
+// have graphs and analysis.
+
 
 import com.opencsv.CSVWriter
 import ij.IJ
