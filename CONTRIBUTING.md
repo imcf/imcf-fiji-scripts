@@ -1,6 +1,16 @@
 Development And Contributing Instructions
 =========================================
 
+Conventions
+-----------
+
+* When adding new scripts make sure to have all words starting with an uppercase letter
+  in the script name.
+* Having a trailing "`_`" (underscore) in the script name is **not allowed**. Choose a
+  better name instead.
+* Use spaces (**not** tabs) in your scripts.
+* For *branch* names in git, please only use numbers, lowercase letters and dashes.
+
 Making a new release
 --------------------
 
