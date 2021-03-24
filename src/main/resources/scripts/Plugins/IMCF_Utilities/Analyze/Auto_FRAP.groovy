@@ -4,12 +4,13 @@
  * Email: laurent.guerard@unibas.ch
  * Creation Date: Friday, 27th September 2019 3:32:35 pm
  * -----
- * Last Modified: Tuesday, 23rd March 2021 16:58:59
+ * Last Modified: Wednesday, 24th March 2021 12:10:13
  * Modified By: Laurent Guerard
  * -----
  * HISTORY:
  * Date         By  Comments
  * ------------ --- ---------------------------------------------------------
+ * 2021-03-24	LG 	Fixed the output directory path
  * 2020-05-08   LG  Added log
  * 2019-09-27   LG  1st version. Working.
  */
@@ -43,6 +44,13 @@ imp_dup = new Duplicator().run(imp, 1, 1, 1, 1, 1, imp.getNFrames())
 calibration = imp.getCalibration()
 file_info = imp.getOriginalFileInfo()
 basename = imp.getTitle()
+
+if (file_info.directory == null)
+	output_dir = System.properties.'user.home' + "/Desktop"
+else
+	output_dir = file_info.directory
+
+// println(output_dir)
 
 // Do stackreg if necessary
 IJ.log("Starting registration")
@@ -124,4 +132,4 @@ catch (IOException e) {
 }
 
 IJ.log("Macro finished")
-IJ.log("The CSV should be found next to your image in the folder at " + file_info.directory + basename + ".csv")
+IJ.log("The CSV should be found next to your image in the folder at " + output_dir + basename + ".csv")
