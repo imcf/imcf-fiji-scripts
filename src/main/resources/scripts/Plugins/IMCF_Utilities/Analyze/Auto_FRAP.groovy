@@ -4,7 +4,7 @@
  * Email: laurent.guerard@unibas.ch
  * Creation Date: Friday, 27th September 2019 3:32:35 pm
  * -----
- * Last Modified: Wednesday, 24th March 2021 12:10:13
+ * Last Modified: Wednesday, 24th March 2021 12:26:26
  * Modified By: Laurent Guerard
  * -----
  * HISTORY:
@@ -46,11 +46,11 @@ file_info = imp.getOriginalFileInfo()
 basename = imp.getTitle()
 
 if (file_info.directory == null)
-	output_dir = System.properties.'user.home' + "/Desktop"
+	output_dir = System.properties.'user.home' + "/Desktop/"
 else
 	output_dir = file_info.directory
 
-// println(output_dir)
+println(output_dir)
 
 // Do stackreg if necessary
 IJ.log("Starting registration")
@@ -100,7 +100,7 @@ time_frame = calibration.frameInterval
 try {
     // create FileWriter object with file as parameter
     // print file_info.directory + basename
-    FileWriter outputfile = new FileWriter(file_info.directory + basename + ".csv")
+    FileWriter outputfile = new FileWriter(output_dir + basename + ".csv")
 
     // create CSVWriter with ';' as separator
     CSVWriter writer = new CSVWriter(outputfile, ';'.charAt(0),
