@@ -58,7 +58,7 @@ necessary):
         {
             "label": "deploy",
             "type": "shell",
-            "command": "mvn -Dimagej.app.directory=/opt/fiji-packaging/Fiji.app",
+            "command": "mvn -Dscijava.app.directory=/opt/fiji-packaging/Fiji.app",
             "group": {
                 "kind": "build",
                 "isDefault": true
