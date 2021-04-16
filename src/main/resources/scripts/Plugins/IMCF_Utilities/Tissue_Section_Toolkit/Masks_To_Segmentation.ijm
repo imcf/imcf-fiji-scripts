@@ -55,8 +55,10 @@ for (i=0; i < roiManager("count"); i++) {
 roiManager("sort");
 // close();
 
+/* do NOT close the mask image, we might have to go back to it!
 selectImage(tst_mask);
 close();
+*/
 
 selectImage(tst_labels);
 roiManager("show all with labels");
