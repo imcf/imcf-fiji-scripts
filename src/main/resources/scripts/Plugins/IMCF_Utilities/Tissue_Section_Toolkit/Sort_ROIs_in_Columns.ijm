@@ -100,6 +100,7 @@ function select_next_unprocessed_roi() {
 }
 
 // print("\\Clear");
+print("\n\n--- Sort ROIs in Columns STARTING ---\n\n");
 
 selectImage(tst_slide);
 title_slide = getTitle();
