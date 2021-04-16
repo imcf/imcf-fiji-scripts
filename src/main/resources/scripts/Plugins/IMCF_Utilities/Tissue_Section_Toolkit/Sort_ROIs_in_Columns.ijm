@@ -104,7 +104,9 @@ print("Using image (" + tst_labels + ") as label image: " + title_labels);
 run("Properties...", "unit=pixel pixel_width=1 pixel_height=1 voxel_depth=1");
 getDimensions(_, img_height, _, _, _);
 
-label_order = newArray(roiManager("count"));
+roi_count = roiManager("count")
+print("Re-arranging " + roi_count + " ROIs...");
+label_order = newArray(roi_count);
 
 // start off with the first ROI:
 i = 0;
