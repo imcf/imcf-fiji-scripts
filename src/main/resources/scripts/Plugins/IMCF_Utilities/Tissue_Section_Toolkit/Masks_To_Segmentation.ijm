@@ -41,8 +41,13 @@ run("glasbey on dark");
 for (i=0; i < roiManager("count"); i++) {
     roiManager("select", i);
     // first rename the ROI using its value from the label image:
-    Roi.getCoordinates(xpoints, ypoints);
+    Roi.getContainedPoints(xpoints, ypoints);
     value = getPixel(xpoints[0], ypoints[0]);
+    if (value == 0) {
+        msg = "ERROR: value is zero, ROI id: " + i;
+        print(msg);
+        exit(msg);
+    }
     roiManager("rename", lpad(value, 5));
 
     // now replace the ROI by its bounding box, adding the padding requested:
