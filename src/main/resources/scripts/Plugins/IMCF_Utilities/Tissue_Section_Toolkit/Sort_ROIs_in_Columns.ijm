@@ -45,6 +45,12 @@ function select_and_rename_roi(label, new_name) {
         True in case a ROI with a matching name was found (which will also be
         the selected one then), false otherwise.
     */
+	// dprint("select_and_rename_roi(");
+	// dprint("    label=" + label);
+	// dprint("    new_name=" + new_name);
+	// dprint(")");
+    // dprint("");
+
 	for (i=0; i < roiManager("count"); i++) {
 		roiManager("select", i);
 		cur_label = parseInt(Roi.getName);
