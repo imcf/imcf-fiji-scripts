@@ -111,9 +111,11 @@ label_order = newArray(roi_count);
 // start off with the first ROI:
 i = 0;
 roiManager("select", i);
-val = parseInt(Roi.getName);
+roi_name = Roi.getName;
+// print("Processing ROI '" + roi_name + "'");
+val = parseInt(roi_name);
 if (isNaN(val)) {
-	exit("Unable to parse value of first label: " + Roi.getName);
+	exit("Unable to parse value of first label: " + roi_name);
 }
 // print("First label value: " + val);
 label_order[i] = val;
