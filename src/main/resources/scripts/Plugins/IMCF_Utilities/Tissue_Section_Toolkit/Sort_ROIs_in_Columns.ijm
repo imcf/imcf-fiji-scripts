@@ -26,6 +26,39 @@ function lpad(str, len) {
 }
 
 
+function getTopLeftRoi() {
+    /* Identify the ROI with the closest distance to (0,0).
+
+    Or simply speaking the ROI that is on the top-left.
+    */
+    roi_count = roiManager("count")
+    print("Checking " + roi_count + " ROIs for their distance to (0,0)...");
+
+    // initialize values: calculate biggest possible distance to (0,0)
+    getDimensions(img_width, img_height, _, _, _);
+    closest_distance = sqrt(Math.sqr(img_width) + Math.sqr(img_height));
+    closest_id = -1;
+    dprint("Largest possible distance to (0,0) is " + closest_distance);
+
+    for (roi_id = 0; roi_id < roi_count; roi_id++) {
+        roiManager("select", roi_id);
+        roi_name = Roi.getName;
+        dprint("Processing ROI '" + roi_name + "'");
+        Roi.getBounds(x, y, xsize, ysize);
+        cx = floor(x + (xsize/2));
+        cy = floor(y + (ysize/2));
+        dist = sqrt(Math.sqr(cx) + Math.sqr(cy));
+        dprint(dist);
+        if (dist < closest_distance) {
+            print("ROI " + roi_id + " [" + roi_name + "] is at " + dist + " to (0,0)");
+            closest_distance = dist;
+            closest_id = roi_id;
+        }
+    }
+    return closest_id;
+}
+
+
 function select_and_rename_roi(label, new_name) {
     /* Select the ROI whose name matches the given label and rename it.
 
@@ -123,8 +156,9 @@ roi_count = roiManager("count")
 print("Re-arranging " + roi_count + " ROIs...");
 label_order = newArray(roi_count);
 
-// start off with the first ROI:
-i = 0;
+
+// start off with the ROI that is at the top left position
+i = getTopLeftRoi();
 roiManager("select", i);
 roi_name = Roi.getName;
 dprint("Processing ROI '" + roi_name + "'");
