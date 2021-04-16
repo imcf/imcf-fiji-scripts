@@ -6,6 +6,14 @@
 */
 
 
+function dprint(message) {
+    /* debug-print helper function */
+
+    // uncomment the print statement to get debug messages:
+    // print(message);
+}
+
+
 function lpad(str, len) {
 	/* left-pad a string with zeros to a given total length */
 	cur_len = lengthOf("" + str);
@@ -112,12 +120,12 @@ label_order = newArray(roi_count);
 i = 0;
 roiManager("select", i);
 roi_name = Roi.getName;
-// print("Processing ROI '" + roi_name + "'");
+dprint("Processing ROI '" + roi_name + "'");
 val = parseInt(roi_name);
 if (isNaN(val)) {
 	exit("Unable to parse value of first label: " + roi_name);
 }
-// print("First label value: " + val);
+dprint("First label value: " + val);
 label_order[i] = val;
 select_and_rename_roi(val, "tst-" + lpad(i, 5));
 
@@ -126,14 +134,14 @@ while (unprocessed) {
 	Roi.getBounds(x, y, xsize, ysize);
 	cx = floor(x + (xsize/2));
 	cy = floor(y + (ysize/2));
-	// print("roi:" + Roi.getName + " x:" + cx + " y:" + cy + " val:" + val);
+	dprint("roi:" + Roi.getName + " x:" + cx + " y:" + cy + " val:" + val);
 
 	// now scan downwards from the ROI center for the next label:
 	label_found = false;
 	for (sy=cy; sy<=img_height; sy++) {
 		val = getPixel(cx, sy);
 		if ((val != label_order[i]) && (val > 0)) {
-			// print("New label found: " + val);
+			dprint("New label found: " + val);
             label_found = true;
 			i++;
 			label_order[i] = val;
