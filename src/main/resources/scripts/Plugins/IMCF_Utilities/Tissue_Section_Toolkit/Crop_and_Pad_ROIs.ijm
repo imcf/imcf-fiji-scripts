@@ -59,7 +59,7 @@ for (i=0; i < nrois; i++) {
 	roiManager("select", i);
 	run("Duplicate...", "duplicate");
 	if (pad_crops == true) {
-		run("Canvas Size...", "width=" + max_width + " height=" + max_height + " position=Center zero");		
+		run("Canvas Size...", "width=" + max_width + " height=" + max_height + " position=Center zero");
 	}
 	saveAs("Tiff", out_pfx + lpad(i, nroi_chars) + ".tif");
 	close();
