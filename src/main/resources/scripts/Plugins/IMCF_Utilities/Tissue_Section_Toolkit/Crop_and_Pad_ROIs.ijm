@@ -7,6 +7,14 @@
 #@ File(label="Output directory (if enabled above)",style="directory") out_dir
 */
 
+function dprint(message) {
+	/* debug-print helper function */
+
+	// uncomment the print statement to get debug messages:
+	// print(message);
+}
+
+
 function lpad(str, len) {
 	/* left-pad a string with zeros to a given total length */
 	cur_len = lengthOf("" + str);
@@ -67,6 +75,7 @@ for (i = 0; i < nrois; i++) {
 		run("Canvas Size...", "width=" + max_width + " height=" + max_height + " position=Center zero");
 	}
 	out_fname = out_pfx + lpad(cur_i, nroi_chars) + ".tif";
+	dprint("Saving ROI to " + out_fname);
 	saveAs("Tiff", out_fname);
 	cur_i++;
 	close();
