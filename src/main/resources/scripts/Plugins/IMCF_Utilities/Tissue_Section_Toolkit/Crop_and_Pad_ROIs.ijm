@@ -9,12 +9,12 @@
 function lpad(str, len) {
 	/* left-pad a string with zeros to a given total length */
 	cur_len = lengthOf("" + str);
-    if (cur_len < len) {
-        for (i=0; i<(len-cur_len); i++) {
-            str = "0" + str;
-        }
-    }
-    return str;
+	if (cur_len < len) {
+		for (i = 0; i < (len - cur_len); i++) {
+			str = "0" + str;
+		}
+	}
+	return str;
 }
 
 setBatchMode(true);
@@ -38,7 +38,7 @@ if (nrois == 0) {
 // find the largest ROI size in x and y (independently!):
 roi_widths = newArray(nrois);
 roi_heights = newArray(nrois);
-for (i=0; i < nrois; i++) {
+for (i = 0; i < nrois; i++) {
 	roiManager("select", i);
 	Roi.getBounds(_, _, rwidth, rheight);
 	// print(rwidth + " x " + rheight);
@@ -53,7 +53,7 @@ print("maximum bounds size: " + max_width + " x " + max_height);
 print("Processing " + nrois + " ROIs...");
 nroi_chars = lengthOf("" + nrois);
 out_pfx = out_dir + "/" + title + "_roi-";
-for (i=0; i < nrois; i++) {
+for (i = 0; i < nrois; i++) {
 	// print("Processing ROI " + i);
 	run("Select None");
 	roiManager("select", i);
