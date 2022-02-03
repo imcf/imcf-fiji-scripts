@@ -3,6 +3,7 @@
 #@ ImagePlus tst_slide
 #@ Boolean(label="Pad crops to same size?",description="pad all crops with black to match the maximum size in X and Y",default=true) pad_crops
 #@ Boolean(label="Specify output directory for results",description="if unchecked, the next setting will be ignored",default=false) specify_out_dir
+#@ Integer(label="Starting index for saving ROIs",min=0,persist=false) start_i
 #@ File(label="Output directory (if enabled above)",style="directory") out_dir
 */
 
@@ -51,7 +52,11 @@ print("maximum bounds size: " + max_width + " x " + max_height);
 
 // now process all ROIs, duplicate them and optionally pad the result
 print("Processing " + nrois + " ROIs...");
-nroi_chars = lengthOf("" + nrois);
+// pad index count by two more digits that the current ROI set would need, to
+// allow for combining of multiple slides manually:
+nroi_chars = lengthOf("" + nrois) + 2;
+// use "cur_i" so we don't have to change "start_i" but can refer to it later:
+cur_i = start_i;
 out_pfx = out_dir + "/" + title + "_roi-";
 for (i = 0; i < nrois; i++) {
 	// print("Processing ROI " + i);
@@ -61,7 +66,9 @@ for (i = 0; i < nrois; i++) {
 	if (pad_crops == true) {
 		run("Canvas Size...", "width=" + max_width + " height=" + max_height + " position=Center zero");
 	}
-	saveAs("Tiff", out_pfx + lpad(i, nroi_chars) + ".tif");
+	out_fname = out_pfx + lpad(cur_i, nroi_chars) + ".tif";
+	saveAs("Tiff", out_fname);
+	cur_i++;
 	close();
 	selectImage(tst_slide_id);
 }
@@ -69,5 +76,6 @@ for (i = 0; i < nrois; i++) {
 setBatchMode("exit and display");
 print("Processed " + nrois + " ROIs.");
 
-print("tst:padded-sections:firstfile:" + out_pfx + lpad(0, nroi_chars) + ".tif");
+print("tst:padded-sections:firstfile:" + out_pfx + lpad(start_i, nroi_chars) + ".tif");
+print("tst:padded-sections:lastfile:" + out_pfx + lpad(cur_i - 1, nroi_chars) + ".tif");
 print("\n\n--- Crop and Pad ROIs COMPLETED ---\n\n");
