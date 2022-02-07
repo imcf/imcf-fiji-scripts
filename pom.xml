@@ -125,8 +125,8 @@
 		<url>https://github.com/imcf/imcf-fiji-scripts/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.com/imcf/imcf-fiji-scripts</url>
+		<system>GitHub Actions</system>
+		<url>https://github.com/imcf/imcf-fiji-scripts/actions</url>
 	</ciManagement>
 
 	<properties>
