@@ -1,6 +1,6 @@
 # Fiji Scripts provided by the IMCF ![Package logo][img_logo]
 
-[![Build Status](https://travis-ci.com/imcf/imcf-fiji-scripts.svg?branch=master)](https://travis-ci.com/imcf/imcf-fiji-scripts)
+[![Build Status](https://github.com/imcf/imcf-fiji-scripts/actions/workflows/build-main.yml/badge.svg)](https://github.com/imcf/imcf-fiji-scripts/actions/workflows/build-main.yml)
 [![DOI](https://zenodo.org/badge/152729007.svg)](https://zenodo.org/badge/latestdoi/152729007)
 
 This repository contains various tools and scripts for [Fiji][fiji] provided by the
