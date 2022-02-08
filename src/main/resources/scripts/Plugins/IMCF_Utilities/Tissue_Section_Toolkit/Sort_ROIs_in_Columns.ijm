@@ -53,8 +53,12 @@ function getTopLeftRoi() {
             print("ROI " + roi_id + " [" + roi_name + "] is at " + dist + " to (0,0)");
             closest_distance = dist;
             closest_id = roi_id;
+            closest_name = roi_name;
+        } else {
+            dprint("skipping ROI " + roi_id + " [" + roi_name + "] (distance is " + dist + ")");
         }
     }
+    dprint("Top-Left ROI is #" + closest_id + " [" + closest_name + "] (dist: " + closest_distance + ")\n");
     return closest_id;
 }
 
