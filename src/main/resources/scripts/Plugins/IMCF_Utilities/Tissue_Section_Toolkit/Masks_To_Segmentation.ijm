@@ -10,7 +10,7 @@ function lpad(str, len) {
     /* left-pad a string with zeros to a given total length */
     cur_len = lengthOf("" + str);
     if (cur_len < len) {
-        for (i=0; i<(len-cur_len); i++) {
+        for (i = 0; i < (len - cur_len); i++) {
             str = "0" + str;
         }
     }
@@ -29,7 +29,7 @@ selectImage(tst_mask);
 print("Using image (" + tst_mask + ") as mask image.");
 getDimensions(width, height, _, _, _);
 
-size = (width/15) * (height/10) / 4;
+size = (width / 15) * (height / 10) / 4;
 print("Minimum section size (in square pixels) estimated from image: " + size);
 run("Analyze Particles...", "size=" + size + "-Infinity show=[Count Masks] pixel add");
 tst_labels = getImageID();
@@ -38,7 +38,7 @@ run("Enhance Contrast", "saturated=0.01");
 run("glasbey on dark");
 
 
-for (i=0; i < roiManager("count"); i++) {
+for (i = 0; i < roiManager("count"); i++) {
     roiManager("select", i);
     // first rename the ROI using its value from the label image:
     Roi.getContainedPoints(xpoints, ypoints);
@@ -53,7 +53,7 @@ for (i=0; i < roiManager("count"); i++) {
     // now replace the ROI by its bounding box, adding the padding requested:
     Roi.getBounds(x, y, width, height);
     // print(x + " " + y + " " + width + " " + height);
-    makeRectangle(x-padding, y-padding, width+padding*2, height+padding*2);
+    makeRectangle(x - padding, y - padding, width + padding * 2, height + padding * 2);
     roiManager("update");
 }
 
