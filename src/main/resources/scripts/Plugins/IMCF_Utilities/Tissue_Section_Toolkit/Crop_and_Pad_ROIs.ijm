@@ -7,11 +7,13 @@
 #@ File(label="Output directory (if enabled above)",style="directory") out_dir
 */
 
-function dprint(message) {
-    /* debug-print helper function */
 
-    // uncomment the print statement to get debug messages:
-    // print(message);
+DEBUG = eval("js", "debug = Prefs.get('imcf.debugging', false)");
+
+function dprint(message) {
+    if (DEBUG) {
+        print(message);
+    }
 }
 
 

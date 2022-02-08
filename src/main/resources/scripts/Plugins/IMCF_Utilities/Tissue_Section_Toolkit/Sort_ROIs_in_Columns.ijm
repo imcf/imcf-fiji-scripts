@@ -5,12 +5,12 @@
 #@ ImagePlus (label="Label image") tst_labels
 */
 
+DEBUG = eval("js", "debug = Prefs.get('imcf.debugging', false)");
 
 function dprint(message) {
-    /* debug-print helper function */
-
-    // uncomment the print statement to get debug messages:
-    // print(message);
+    if (DEBUG) {
+        print(message);
+    }
 }
 
 
