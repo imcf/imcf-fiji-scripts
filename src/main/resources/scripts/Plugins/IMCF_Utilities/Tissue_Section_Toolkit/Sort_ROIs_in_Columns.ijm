@@ -43,12 +43,12 @@ function getTopLeftRoi() {
     for (roi_id = 0; roi_id < roi_count; roi_id++) {
         roiManager("select", roi_id);
         roi_name = Roi.getName;
-        dprint("Processing ROI '" + roi_name + "'");
+        // dprint("Processing ROI '" + roi_name + "'");
         Roi.getBounds(x, y, xsize, ysize);
         cx = floor(x + (xsize/2));
         cy = floor(y + (ysize/2));
         dist = sqrt(Math.sqr(cx) + Math.sqr(cy));
-        dprint(dist);
+        // dprint(dist);
         if (dist < closest_distance) {
             print("ROI " + roi_id + " [" + roi_name + "] is at " + dist + " to (0,0)");
             closest_distance = dist;
@@ -182,7 +182,7 @@ while (unprocessed) {
     for (sy=cy; sy<=img_height; sy++) {
         val = getPixel(cx, sy);
         if ((val != label_order[i]) && (val > 0)) {
-            dprint("New label found: " + val);
+            // dprint("New label found: " + val);
             label_found = true;
             i++;
             label_order[i] = val;
