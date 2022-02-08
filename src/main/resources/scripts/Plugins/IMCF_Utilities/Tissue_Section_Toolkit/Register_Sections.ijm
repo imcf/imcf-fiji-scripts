@@ -9,7 +9,7 @@ selectImage(tst_stack);
 param = "";
 channels = split(hsr_ch, ",");
 for (i=0; i<channels.length; i++) {
-	param += " channel" + channels[i];
+    param += " channel" + channels[i];
 }
 print("Running HyperStackReg on image [" + tst_stack + "] using channels: " + param);
 

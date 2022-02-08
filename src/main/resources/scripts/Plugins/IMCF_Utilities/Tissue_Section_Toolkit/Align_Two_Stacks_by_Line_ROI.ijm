@@ -12,7 +12,7 @@ function checkLineSelectionPresent(imp) {
         exitmsg = "Straight line selection required!";
         print(exitmsg);
         exit(exitmsg);
-    }    
+    }
     selectImage(imp_cur);
 }
 
@@ -139,19 +139,19 @@ cy_delta = center_ref[1] - center_aligned[1];
 shift_ref = newArray(0, 0);
 shift_aligned = newArray(0, 0);
 if (cx_delta < 0) {
-	// shift reference to the right:
-	shift_ref[0] = abs(cx_delta);
+    // shift reference to the right:
+    shift_ref[0] = abs(cx_delta);
 } else {
-	// shift aligned to the right:
-	shift_aligned[0] = cx_delta;
+    // shift aligned to the right:
+    shift_aligned[0] = cx_delta;
 }
 
 if (cy_delta < 0) {
-	// shift reference downwards:
-	shift_ref[1] = abs(cy_delta);
+    // shift reference downwards:
+    shift_ref[1] = abs(cy_delta);
 } else {
-	// shift aligned downwards:
-	shift_aligned[1] = cy_delta;
+    // shift aligned downwards:
+    shift_aligned[1] = cy_delta;
 }
 Array.print(shift_ref);
 Array.print(shift_aligned);

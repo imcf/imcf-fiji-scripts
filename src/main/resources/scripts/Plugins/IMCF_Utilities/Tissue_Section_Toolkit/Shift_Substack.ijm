@@ -26,17 +26,17 @@ setBatchMode(true);
 Stack.getPosition(_, cur_z, _);
 getDimensions(sizex, sizey, channels, slices, _);
 if (cur_z == 1) {
-	exitmsg = "Current Z-position must be greater than 1!";
-	print(exitmsg);
-	exit(exitmsg);
+    exitmsg = "Current Z-position must be greater than 1!";
+    print(exitmsg);
+    exit(exitmsg);
 }
 upper = "1-" + (cur_z-1);
 lower = "" + cur_z + "-" + slices;
 
 if (selectionType() != 5) {
-	exitmsg = "Straight line selection required!";
-	print(exitmsg);
-	exit(exitmsg);
+    exitmsg = "Straight line selection required!";
+    print(exitmsg);
+    exit(exitmsg);
 }
 
 print("Splitting into substacks: " + upper + " and " + lower);
@@ -65,13 +65,13 @@ xcrop = abs(xdelta);
 ycrop = abs(ydelta);
 xpos_lower = "Left";
 if (xdelta > 0) {
-	xpos_lower = "Right";
-	xcrop = 0;
+    xpos_lower = "Right";
+    xcrop = 0;
 }
 ypos_lower = "Top";
 if (ydelta > 0) {
-	ypos_lower = "Bottom";
-	ycrop = 0;
+    ypos_lower = "Bottom";
+    ycrop = 0;
 }
 pos = ypos_lower + "-" + xpos_lower;
 print("Shifting lower stack to the " + pos + " (" + xdelta + "/" + ydelta + ")");
@@ -83,10 +83,10 @@ tst_stack_shifted = getImageID();
 
 selectImage(tst_stack);
 if (keep_orig) {
-	rename("PRE-SHIFTED__" + getTitle());
-	Stack.setSlice(cur_z);
+    rename("PRE-SHIFTED__" + getTitle());
+    Stack.setSlice(cur_z);
 } else {
-	close();
+    close();
 }
 
 selectImage(tst_stack_shifted);

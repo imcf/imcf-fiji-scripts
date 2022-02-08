@@ -9,19 +9,19 @@ function parse_filename_from_log() {
     msgs = split(getInfo("Log"), "\n");
     // search the log backwards for a line with the pattern defined above:
     for (i=(msgs.length-1); i>=0; i--) {
-    	if (startsWith(msgs[i], pattern)) {
-    		fname = replace(msgs[i], pattern, "");
-    		return fname;
-    	}
+        if (startsWith(msgs[i], pattern)) {
+            fname = replace(msgs[i], pattern, "");
+            return fname;
+        }
     }
-	exit("Unable to find sequence filename in log messages!");
+    exit("Unable to find sequence filename in log messages!");
 }
 
 // sequence-loading, renaming etc. doesn't work in BatchMode, so disable it:
 setBatchMode(false);
 
 if (endsWith(imgf, "[tst-from-log]")) {
-	imgf = parse_filename_from_log();
+    imgf = parse_filename_from_log();
 }
 
 // generate a pseudo-random image title:
@@ -33,7 +33,7 @@ run("Deinterleave", "how=" + nchannels);
 
 merge = "";
 for (i=1; i<=nchannels; i++) {
-	merge += "c" + i + "=[" + title + " #" + i + "] ";
+    merge += "c" + i + "=[" + title + " #" + i + "] ";
 }
 print(merge);
 run("Merge Channels...", merge + "create ignore");

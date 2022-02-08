@@ -18,7 +18,7 @@ resetThreshold();
 rename("tissue-section-mask");
 
 for (i=0; i < erode_steps; i++) {
-	run("Erode");
+    run("Erode");
 }
 run("Fill Holes");
 tst_mask = getImageID();

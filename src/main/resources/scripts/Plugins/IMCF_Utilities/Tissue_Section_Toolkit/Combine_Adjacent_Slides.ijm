@@ -5,7 +5,7 @@
 */
 
 if (imp_left == imp_right) {
-	exit("Please select two different images!");
+    exit("Please select two different images!");
 }
 
 print("\\Clear");
@@ -22,11 +22,11 @@ rename("tst-right");
 // print(title + " - " + height2);
 
 if (height1 > height2) {
-	selectImage(imp_right);
-	run("Canvas Size...", "height=" + height1 + " position=Top-Left zero");
+    selectImage(imp_right);
+    run("Canvas Size...", "height=" + height1 + " position=Top-Left zero");
 } else {
-	selectImage(imp_left);
-	run("Canvas Size...", "height=" + height2 + " position=Top-Left zero");
+    selectImage(imp_left);
+    run("Canvas Size...", "height=" + height2 + " position=Top-Left zero");
 }
 
 run("Combine...", "stack1=tst-left stack2=tst-right");

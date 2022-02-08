@@ -7,8 +7,8 @@
 */
 
 function lpad(str, len) {
-	/* left-pad a string with zeros to a given total length */
-	cur_len = lengthOf("" + str);
+    /* left-pad a string with zeros to a given total length */
+    cur_len = lengthOf("" + str);
     if (cur_len < len) {
         for (i=0; i<(len-cur_len); i++) {
             str = "0" + str;
@@ -52,9 +52,9 @@ for (i=0; i < roiManager("count"); i++) {
 
     // now replace the ROI by its bounding box, adding the padding requested:
     Roi.getBounds(x, y, width, height);
-	// print(x + " " + y + " " + width + " " + height);
-	makeRectangle(x-padding, y-padding, width+padding*2, height+padding*2);
-	roiManager("update");
+    // print(x + " " + y + " " + width + " " + height);
+    makeRectangle(x-padding, y-padding, width+padding*2, height+padding*2);
+    roiManager("update");
 }
 
 roiManager("sort");
