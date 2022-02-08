@@ -162,8 +162,8 @@ label_order = newArray(roi_count);
 
 
 // start off with the ROI that is at the top left position
-i = getTopLeftRoi();
-roiManager("select", i);
+top_left_roi = getTopLeftRoi();
+roiManager("select", top_left_roi);
 roi_name = Roi.getName;
 dprint("Processing ROI '" + roi_name + "'");
 val = parseInt(roi_name);
@@ -171,6 +171,7 @@ if (isNaN(val)) {
     exit("Unable to parse value of first label: " + roi_name);
 }
 dprint("First label value: " + val);
+i = 0;
 label_order[i] = val;
 select_and_rename_roi(val, "tst-" + lpad(i, 5));
 
