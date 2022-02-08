@@ -18,7 +18,7 @@ function lpad(str, len) {
     /* left-pad a string with zeros to a given total length */
     cur_len = lengthOf("" + str);
     if (cur_len < len) {
-        for (i=0; i<(len-cur_len); i++) {
+        for (i = 0; i < (len - cur_len); i++) {
             str = "0" + str;
         }
     }
@@ -45,8 +45,8 @@ function getTopLeftRoi() {
         roi_name = Roi.getName;
         // dprint("Processing ROI '" + roi_name + "'");
         Roi.getBounds(x, y, xsize, ysize);
-        cx = floor(x + (xsize/2));
-        cy = floor(y + (ysize/2));
+        cx = floor(x + (xsize / 2));
+        cy = floor(y + (ysize / 2));
         dist = sqrt(Math.sqr(cx) + Math.sqr(cy));
         // dprint(dist);
         if (dist < closest_distance) {
@@ -84,7 +84,7 @@ function select_and_rename_roi(label, new_name) {
     // dprint(")");
     // dprint("");
 
-    for (i=0; i < roiManager("count"); i++) {
+    for (i = 0; i < roiManager("count"); i++) {
         roiManager("select", i);
         cur_label = parseInt(Roi.getName);
         if (cur_label == label) {
@@ -119,14 +119,14 @@ function select_next_unprocessed_roi() {
     topleftdist = imgsizex + imgsizey;
     selected = -1;
 
-    for (i=0; i < roiManager("count"); i++) {
+    for (i = 0; i < roiManager("count"); i++) {
         roiManager("select", i);
         cur_name = Roi.getName;
         if (!startsWith(cur_name, "tst-")) {
             Roi.getBounds(x, y, _, _);
             // Pythagoras would be more precise, but the sum does the job here:
-            if (topleftdist > x+y) {
-                topleftdist = x+y;
+            if (topleftdist > x + y) {
+                topleftdist = x + y;
                 selected = i;
             }
         }
@@ -173,13 +173,13 @@ select_and_rename_roi(val, "tst-" + lpad(i, 5));
 unprocessed = true;
 while (unprocessed) {
     Roi.getBounds(x, y, xsize, ysize);
-    cx = floor(x + (xsize/2));
-    cy = floor(y + (ysize/2));
+    cx = floor(x + (xsize / 2));
+    cy = floor(y + (ysize / 2));
     dprint("roi:" + Roi.getName + " x:" + cx + " y:" + cy + " val:" + val);
 
     // now scan downwards from the ROI center for the next label:
     label_found = false;
-    for (sy=cy; sy<=img_height; sy++) {
+    for (sy = cy; sy <= img_height; sy++) {
         val = getPixel(cx, sy);
         if ((val != label_order[i]) && (val > 0)) {
             // dprint("New label found: " + val);
