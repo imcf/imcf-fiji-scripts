@@ -513,7 +513,7 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
             file_extension = ".ics"
             path_to_image = path_root + file_extension
 
-        os.chdir(locate_latest_imaris)
+        os.chdir(locate_latest_imaris())
         command = 'ImarisConvert.exe -i "%s" -of Imaris5 -o "%s"' % (
             path_to_image,
             path_to_image.replace(file_extension,".ims")
