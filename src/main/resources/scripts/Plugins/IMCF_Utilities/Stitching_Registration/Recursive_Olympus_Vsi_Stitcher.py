@@ -464,27 +464,37 @@ def get_folder_size(source):
     return total_size
 
 
-def convert_to_imaris(convert_to_ims, path_to_image):
-    """convert a given file to Imaris5 .ims using ImarisConvert.exe and a jar from Jan Eglinger
+def locate_latest_imaris(paths_to_check=None):
+    """Find paths to latest installed Imaris or ImarisFileConverter version.
 
     Parameters
     ----------
-    convert_to_ims : Boolean
-        True if the users chose file conversion
-    path_to_image : str
-        the full path to the input image
+    paths_to_check: list of str, optional
+        A list of paths that should be used to look for the installations, by default
+        `None` which will fall back to the standard installation locations of Bitplane.
+
+    Returns
+    -------
+    str
+        Full path to the most recent (as in "version number") ImarisFileConverter
+        or Imaris installation folder with the latter one having priority.
+        Will be empty if nothing is found.
     """
-    imarisconvert = "C:/Program Files/Bitplane/Imaris 9.8.0/ImarisConvert.exe"
+    if not paths_to_check:
+        paths_to_check = [
+            r"C:\Program Files\Bitplane\ImarisFileConverter ",
+            r"C:\Program Files\Bitplane\Imaris x64 ",
+        ]
 
-    if os.path.exists(imarisconvert) == False:
-        convert_to_ims = False
-        IJ.log("ImarisConvert.exe not found .. skipping conversion to ims")
+    imaris_paths = [""]
 
-    if convert_to_ims == True:
-        IJ.log("converting to Imaris5 format...")
-        IJ.run("Imaris Converter...", "imarisconvert=[" + imarisconvert + "]")
-        IJ.run("Convert to Imaris5 format", "inputfile=[" + path_to_image + "] delete=false")
+    for check in paths_to_check:
+        hits = glob.glob(check + "*")
+        imaris_paths += sorted(
+            hits, key=lambda x: float(x.replace(check, "").replace(".", ""))
+        )
 
+    return imaris_paths[-1]
 
 def convert_to_imaris2(convert_to_ims, path_to_image):
     """convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
@@ -496,11 +506,6 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
     path_to_image : str
         the full path to the input image
     """
-    imaris_fileconverter_location = sorted(glob.glob("C:\Program Files\Bitplane\Imaris *"), key=lambda x: float(x.replace('C:\Program Files\Bitplane\Imaris ', '').replace('.','')))[-1]
-    imaris_fileconverter_location_alternative = sorted(glob.glob("C:\Program Files\Bitplane\ImarisFileConverter *"), key=lambda x: float(x.replace('C:\Program Files\Bitplane\ImarisFileConverter ', '').replace('.','')))[-1]
-
-    if os.path.exists(imaris_fileconverter_location) == False:
-        imaris_fileconverter_location = imaris_fileconverter_location_alternative
 
     if convert_to_ims == True:
         path_root, file_extension = os.path.splitext(path_to_image)
@@ -508,7 +513,7 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
             file_extension = ".ics"
             path_to_image = path_root + file_extension
 
-        os.chdir(imaris_fileconverter_location)
+        os.chdir(locate_latest_imaris)
         command = 'ImarisConvert.exe -i "%s" -of Imaris5 -o "%s"' % (
             path_to_image,
             path_to_image.replace(file_extension,".ims")
