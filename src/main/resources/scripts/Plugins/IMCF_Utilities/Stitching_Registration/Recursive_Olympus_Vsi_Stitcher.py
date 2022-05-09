@@ -483,7 +483,7 @@ def locate_latest_imaris(paths_to_check=None):
     if not paths_to_check:
         paths_to_check = [
             r"C:\Program Files\Bitplane\ImarisFileConverter ",
-            r"C:\Program Files\Bitplane\Imaris x64 ",
+            r"C:\Program Files\Bitplane\Imaris ",
         ]
 
     imaris_paths = [""]
