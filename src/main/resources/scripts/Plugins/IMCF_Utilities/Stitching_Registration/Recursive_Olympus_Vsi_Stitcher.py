@@ -1,10 +1,10 @@
 # @File(label="source directory", style="directory") source
-# @String(label="file type",choices={".vsi"}) filetype
+# @String(label="file type",choices={".vsi", ".nd2", ".lsm"}) filetype
 # @Boolean(label="quick stitch by stage coordinates", value="False") quick
 # @Boolean(label="save as BigDataViewer hdf5 instead", value="False") bdv
 # @Boolean(label="conserve RAM but be slower", description="tick this if your previous attempt failed with <Out of memory> error", value="False") bigdata
 # @Boolean (label="convert stitched & fused image to Imaris5", description="convert the fused image to *.ims", value=True) convert_to_ims
-#@ String (label="Send info email to: ", description="empty = skip") email_address
+# @String (label="Send info email to: ", description="empty = skip") email_address
 # @DatasetIOService io
 # @ImageDisplayService ImageDisplayService
 
@@ -541,9 +541,9 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
 
     header  = "From: imcf@unibas.ch\n"
     header += "To: %s\n"
-    header += "Subject: Your VSI stitching job finished successfully\n\n"
+    header += "Subject: Your stitching job finished successfully\n\n"
     text = "Dear recipient,\n\n"\
-    "This is an automated message from the VSI stitching tool.\n"\
+    "This is an automated message from the recursive stitching tool.\n"\
     "Your folder %s has been successfully processed (%s min).\n\n"\
     "Kind regards,\n"\
     "The IMCF-team"
