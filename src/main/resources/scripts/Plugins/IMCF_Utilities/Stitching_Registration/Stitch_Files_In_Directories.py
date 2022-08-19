@@ -18,6 +18,7 @@ import shutil
 import glob
 import time
 import subprocess
+import re
 
 import smtplib
 
@@ -95,7 +96,7 @@ def list_all_filenames(source, filetype):
     """
 
     os.chdir(str(source))
-    allimages = sorted(glob.glob("*"+filetype)) # sorted by name
+    allimages = sorted_alphanumeric(glob.glob("*"+filetype)) # sorted by name
 
     return allimages
 
@@ -557,6 +558,11 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
     except smtplib.SMTPException:
        print "Error: unable to send email"
 
+def sorted_alphanumeric(data):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    return sorted(data, key=alphanum_key)
+
 
 # start the process
 execution_start_time = time.time()
@@ -573,6 +579,7 @@ for source in all_source_dirs:
         IJ.log("not enough free RAM, switching to BigData mode (slow)")
 
     allimages = list_all_filenames(source, filetype)
+
     ome_metadata = get_ome_metadata(source, allimages)
     write_tileconfig(source, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
     run_GC_stitcher(source)
