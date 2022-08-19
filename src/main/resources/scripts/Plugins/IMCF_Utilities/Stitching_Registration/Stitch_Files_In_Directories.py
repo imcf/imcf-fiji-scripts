@@ -4,7 +4,7 @@
 # @Boolean(label="save as BigDataViewer hdf5 instead", value="False") bdv
 # @Boolean(label="conserve RAM but be slower", description="tick this if your previous attempt failed with <Out of memory> error", value="False") bigdata
 # @Boolean (label="convert stitched & fused image to Imaris5", description="convert the fused image to *.ims", value=True) convert_to_ims
-# @String (label="Send info email to: ", description="empty = skip") email_address
+# @String (label="Send info email to: ", description="empty = skip", required="False") email_address
 # @DatasetIOService io
 # @ImageDisplayService ImageDisplayService
 
