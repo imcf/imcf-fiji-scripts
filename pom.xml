@@ -11,7 +11,7 @@
 
 	<groupId>ch.unibas.biozentrum.imcf</groupId>
 	<artifactId>imcf-fiji-scripts</artifactId>
-	<version>6.0.2-SNAPSHOT</version>
+	<version>6.1.0</version>
 
 	<name>IMCF Fiji Scripts</name>
 	<description>
@@ -117,7 +117,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/imcf/imcf-fiji-scripts</connection>
 		<developerConnection>scm:git:git@github.com:imcf/imcf-fiji-scripts</developerConnection>
-		<tag>HEAD</tag>
+		<tag>imcf-fiji-scripts-6.1.0</tag>
 		<url>https://github.com/imcf/imcf-fiji-scripts</url>
 	</scm>
 	<issueManagement>
