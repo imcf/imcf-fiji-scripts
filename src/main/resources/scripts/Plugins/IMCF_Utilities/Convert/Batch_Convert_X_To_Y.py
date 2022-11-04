@@ -6,7 +6,6 @@
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
 
 import os
-import shutil
 
 from ij import IJ
 from ij.plugin import StackWriter
@@ -15,8 +14,6 @@ from ij.plugin import StackWriter
 from loci.plugins import BF, LociExporter
 from loci.plugins.in import ImporterOptions
 from loci.plugins.out import Exporter
-
-from java.lang import Exception
 
 # ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 
@@ -122,9 +119,6 @@ out_ext["OME-TIFF2"] = ".tif"
 out_ext["CellH5"] = ".ch5"
 out_ext["BMP"] = ".bmp"
 
-errors = False
-error_subfolder = os.path.join(src_dir, "Error")
-
 # # If the list of files is not empty
 if files:
 
@@ -140,14 +134,8 @@ if files:
         progress_bar(file_id + 1, len(files), 2, "Processing: " + str(file_id))
         IJ.log("\\Update3:Currently opening " + basename + "...")
 
-        try:
-            imps = BFImport(str(file))
-        except Exception:
-            errors = True
-            if not os.path.exists(error_subfolder):
-                os.makedirs(error_subfolder)
-            os.rename(file, os.path.join(error_subfolder, os.path.basename(file)))
-            continue
+
+        imps = BFImport(str(file))
 
         for imp in imps:
             if out_file_extension == "ImageJ-TIF":
@@ -166,5 +154,3 @@ if files:
             imp.close()
 
     IJ.log("\\Update3:Script finished !")
-    if errors:
-        IJ.log("\\Update4:Some files failed to convert and were moved to " + error_subfolder )
