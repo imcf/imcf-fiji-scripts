@@ -5,6 +5,7 @@
 # @Boolean(label="conserve RAM but be slower", description="tick this if your previous attempt failed with <Out of memory> error", value="False") bigdata
 # @Boolean (label="convert stitched & fused image to Imaris5", description="convert the fused image to *.ims", value=True) convert_to_ims
 # @String (label="Send info email to: ", description="empty = skip", required="False") email_address
+# @Boolean(label="Only output TileConfiguration.registered txt file ?", value=False) only_register
 # @DatasetIOService io
 # @ImageDisplayService ImageDisplayService
 
@@ -257,7 +258,7 @@ def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinate
     f.close()
 
 
-def run_GC_stitcher(source):
+def run_GC_stitcher(source, fusion_method):
     """Run the Grid/collection stitching using a TileConfiguration.txt
 
     Arguments:
@@ -277,7 +278,7 @@ def run_GC_stitcher(source):
 
     IJ.run("Grid/Collection stitching", "type=[Positions from file] order=[Defined by TileConfiguration] " +
     "directory=[" + source + "] " +
-    "layout_file=TileConfiguration.txt" + " fusion_method=[Linear Blending] " +
+    "layout_file=TileConfiguration.txt" + " fusion_method=[" + fusion_method + "] " +
     "regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 " +
     ("" if quick else "compute_overlap subpixel_accuracy ") + str(mode))
 
@@ -569,6 +570,13 @@ execution_start_time = time.time()
 source =  fix_ij_dirs(source)
 all_source_dirs = list_dirs_containing_filetype(source, filetype)
 
+if only_register:
+    fusion_method = "Do not fuse images (only write TileConfiguration)"
+    IJ.log("The output will only be the txt file containing registered positions for the tiles.")
+    IJ.log("As such, no HDF5 resaving or Imaris conversion will be happening.")
+else:
+    fusion_method = "Linear Blending"
+
 for source in all_source_dirs:
     IJ.log("now working on " + source)
     print "bigdata= ", str(bigdata)
@@ -582,9 +590,9 @@ for source in all_source_dirs:
 
     ome_metadata = get_ome_metadata(source, allimages)
     write_tileconfig(source, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
-    run_GC_stitcher(source)
+    run_GC_stitcher(source, fusion_method)
 
-    if bigdata is True:
+    if bigdata and not only_register:
         path = source + "temp/"
         open_sequential_gcimages_from_folder(path, ome_metadata[9])
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
@@ -592,12 +600,12 @@ for source in all_source_dirs:
         convert_to_imaris2(convert_to_ims, path_to_image)
         shutil.rmtree(path, ignore_errors = True) # remove temp folder
 
-    if bigdata is False and bdv is True:
+    if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
         convert_to_imaris2(convert_to_ims, path_to_image)
 
-    if bigdata is False and bdv is False:
+    if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source)
         convert_to_imaris2(convert_to_ims, path_to_image)
