@@ -567,6 +567,10 @@ def sorted_alphanumeric(data):
 
 # start the process
 execution_start_time = time.time()
+
+# In case script is ran batch
+if os.path.isfile(source.getAbsolutePath()):
+	source = os.path.dirname(source.getAbsolutePath())
 source =  fix_ij_dirs(source)
 all_source_dirs = list_dirs_containing_filetype(source, filetype)
 
