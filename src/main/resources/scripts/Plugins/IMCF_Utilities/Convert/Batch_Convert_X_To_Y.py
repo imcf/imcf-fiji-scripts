@@ -6,6 +6,7 @@
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
 
 import os
+import fnmatch
 
 from ij import IJ
 from ij.plugin import StackWriter
@@ -14,6 +15,9 @@ from ij.plugin import StackWriter
 from loci.plugins import BF, LociExporter
 from loci.plugins.in import ImporterOptions
 from loci.plugins.out import Exporter
+from loci.formats.in import MetadataOptions
+from loci.formats import ImageReader
+from loci.formats import MetadataTools
 
 # ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 
@@ -37,9 +41,8 @@ def getFileList(directory, filteringString):
     for (dirpath, dirnames, filenames) in os.walk(directory):
         # if out_dir in dirnames: # Ignore destination directory
             # dirnames.remove(OUT_SUBDIR)
-        for f in filenames:
-            if filteringString in f:
-                files.append(os.path.join(dirpath, f))
+        for f in fnmatch.filter(filenames,'*' + filteringString):
+            files.append(os.path.join(dirpath, f))
     return (files)
 
 def BFImport(indivFile):
@@ -99,6 +102,54 @@ def progress_bar(progress, total, line_number, prefix=''):
     x    = int(size*progress/total)
     IJ.log("\\Update%i:%s\t[%s%s] %i/%i\r" % (line_number, prefix, "#"*x, "."*(size-x), progress, total))
 
+def get_series_count_from_ome_metadata(path_to_file):
+    """Get the number of series from a file
+
+    Parameters
+    ----------
+    path_to_file : str
+        Path to the file
+
+    Returns
+    -------
+    int
+        Number of series for the file
+    """
+    reader = ImageReader()
+    omeMeta = MetadataTools.createOMEXMLMetadata()
+    reader.setMetadataStore(omeMeta)
+    reader.setId(path_to_file)
+    series_count = reader.getSeriesCount()
+    reader.close()
+
+    return series_count
+
+def open_single_series_with_BF(path_to_file, series_number):
+    """Open a single serie for a file using Bio-Formats
+
+    Parameters
+    ----------
+    path_to_file : str
+        Path to the file
+    series_number : int
+        Number of the serie to open
+
+    Returns
+    -------
+    ImagePlus
+        ImagePlus of the serie
+    """
+    options = ImporterOptions()
+    options.setColorMode(ImporterOptions.COLOR_MODE_COMPOSITE)
+    options.setSeriesOn(series_number, True) # python starts at 0
+    # options.setSpecifyRanges(True)
+    # options.setCBegin(series_number-1, channel_number-1) # python starts at 0
+    # options.setCEnd(series_number-1, channel_number-1)
+    # options.setCStep(series_number-1, 1)
+    options.setId(path_to_file)
+    imps = BF.openImagePlus(options) # is an array of imp with one entry
+
+    return imps[0]
 
 # ─── MAIN CODE ──────────────────────────────────────────────────────────────────
 
@@ -134,12 +185,23 @@ if files:
         progress_bar(file_id + 1, len(files), 2, "Processing: " + str(file_id))
         IJ.log("\\Update3:Currently opening " + basename + "...")
 
+        series_count = get_series_count_from_ome_metadata(file)
+        pad_number = len(str(series_count))
 
-        imps = BFImport(str(file))
+        for series in range(series_count):
+            progress_bar(series + 1, series_count, 2, "Opening series : ")
 
-        for imp in imps:
+            imp = open_single_series_with_BF(file, series)
+
             if out_file_extension == "ImageJ-TIF":
-                IJ.saveAs(imp, "Tiff", os.path.join(out_dir, basename + ".tif"))
+                IJ.saveAs(
+                    imp,
+                    "Tiff",
+                    os.path.join(
+                        out_dir,
+                        basename + "_series_"
+                        + str(series).zfill(pad_number)
+                        + ".tif"))
             elif out_file_extension == "BMP":
                 out_folder = os.path.join(out_dir, basename + os.path.sep)
 
@@ -149,7 +211,15 @@ if files:
                 StackWriter.save(imp, out_folder, "format=bmp")
 
             else:
-                BFExport(imp, os.path.join(out_dir, basename + out_ext[out_file_extension]))
+                BFExport(
+                    imp,
+                    os.path.join(
+                        out_dir,
+                        basename + "_series_"
+                        + str(series).zfill(pad_number)
+                        + out_ext[out_file_extension]
+                    )
+                )
 
             imp.close()
 
