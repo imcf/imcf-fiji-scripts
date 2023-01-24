@@ -1,5 +1,5 @@
 # @File(label="source directory", style="directory") source
-# @String(label="file type",choices={".vsi", ".nd2", ".lsm"}) filetype
+# @String(label="file type") filetype
 # @Boolean(label="quick stitch by stage coordinates", value="False") quick
 # @Boolean(label="save as BigDataViewer hdf5 instead", value="False") bdv
 # @Boolean(label="conserve RAM but be slower", description="tick this if your previous attempt failed with <Out of memory> error", value="False") bigdata
@@ -12,6 +12,8 @@
 
 # pylint: disable-msg=line-too-long
 # pylint: disable-msg=import-error
+
+# ─── Imports ──────────────────────────────────────────────────────────────────
 
 # python imports
 import os
@@ -37,9 +39,10 @@ from ij.plugin import FolderOpener, HyperStackConverter
 # BigStitcher
 # faim-imagej-imaris-tools-0.0.1.jar (https://maven.scijava.org/service/local/repositories/releases/content/org/scijava/faim-imagej-imaris-tools/0.0.1/faim-imagej-imaris-tools-0.0.1.jar)
 
+# ─── Functions ────────────────────────────────────────────────────────────────
 
 def fix_ij_dirs(path):
-    """use forward slashes in directory paths
+    """Use forward slashes in directory paths
 
     Parameters
     ----------
@@ -59,15 +62,20 @@ def fix_ij_dirs(path):
 
 
 def list_dirs_containing_filetype(source, filetype):
-    """Recurs through the source dir and return all dirs & subdirs
-    that contain the specified filetype
+    """Recur through the source dir and return all dirs
+    and subdirs that contain the specified filetype
 
-    Arguments:
-        source {string} -- Path to source dir
-        filetype {string} -- file extension to specify filetype
+    Parameters
+    ----------
+    source : str
+        Path to source dir
+    filetype : str
+        File extension to specify filetype
 
-    Returns:
-       stitching_dirs {list} -- list of all dirs that contain filetype
+    Returns
+    -------
+    list
+        List of all dirs that contain filetype
     """
 
     dirs_containing_filetype = []
@@ -88,12 +96,17 @@ def list_dirs_containing_filetype(source, filetype):
 def list_all_filenames(source, filetype):
     """Get a sorted list of all files of specified filetype in a given directory
 
-    Arguments:
-        source {string} -- Path to source dir
-        filetype {string} -- file extension to specify filetype
+    Parameters
+    ----------
+    source : str
+        Path to source dir
+    filetype : str
+        File extension to specify filetype
 
-    Returns:
-       allimages {list} -- list of all files of the given type in the source dir
+    Returns
+    -------
+    list
+        List of all files of the given type in the source dir
     """
 
     os.chdir(str(source))
@@ -105,22 +118,37 @@ def list_all_filenames(source, filetype):
 def get_ome_metadata(source, imagenames):
     """Get the stage coordinates and calibration from the ome-xml for a given list of images
 
-    Arguments:
-        source {string} -- Path to the images
-        imagenames {list} -- list of images filenames
+    Parameters
+    ----------
+    source : str
+        Path to the images
+    imagenames : list
+        List of images filenames
 
-    Returns:
-        a tuple that contains:
-        dimensions {int} -- number of dimensions (2D or 3D)
-        stage_coordinates_x {list} -- the abosolute stage x-coordinates from ome-xml metadata
-        stage_coordinates_y {list} -- the abosolute stage y-coordinates from ome-xml metadata
-        stage_coordinates_z {list} -- the abosolute stage z-coordinates from ome-xml metadata
-        relative_coordinates_x_px {list} -- the relative stage x-coordinates in px
-        relative_coordinates_y_px {list} -- the relative stage y-coordinates in px
-        relative_coordinates_z_px {list} -- the relative stage z-coordinates in px
-        image_calibration {list} -- x,y,z image calibration in unit/px
-        calibration_unit {string} -- image calibration unit
-        image_dimensions_czt {list} -- number of images in dimensions c,z,t
+    Returns
+    -------
+    tuple
+        Contains
+        dimensions : int
+            Number of dimensions (2D or 3D)
+        stage_coordinates_x : list
+            The absolute stage x-coordinated from ome-xml metadata
+        stage_coordinates_y : list
+            The absolute stage y-coordinated from ome-xml metadata
+        stage_coordinates_z : list
+            The absolute stage z-coordinated from ome-xml metadata
+        relative_coordinates_x : list
+            The relative stage x-coordinates in px
+        relative_coordinates_y : list
+            The relative stage y-coordinates in px
+        relative_coordinates_z : list
+            The relative stage z-coordinates in px
+        image_calibration : list
+            x,y,z image calibration in unit/px
+        calibration_unit : str
+            Image calibration unit
+        image_dimensions_czt : list
+            Number of images in dimensions c,z,t
     """
 
     # open an array to store the abosolute stage coordinates from metadata
@@ -216,16 +244,20 @@ def get_ome_metadata(source, imagenames):
 def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinates, z_coordinates):
     """Write a TileConfiguration.txt for the Grid/collection stitcher
 
-    Arguments:
-        source {string} -- directory in which the TileConfiguration.txt will be written
-        dimensions {int} -- number of dimensions (2D or 3D)
-        imagenames {list} -- list of images filenames
-        x_coordinates {list} -- the relative stage x-coordinates in px
-        y_coordinates {list} -- the relative stage y-coordinates in px
-        z_coordinates {list} -- the relative stage z-coordinates in px
-
-    Returns:
-        nothing
+    Parameters
+    ----------
+    source : str
+        Directory in which the TileConfiguration.txt will be written
+    dimensions : int
+        Number of dimensions (2D or 3D)
+    imagenames : list
+        List of images filenames
+    x_coordinates : list
+        The relative stage x-coordinates in px
+    y_coordinates : list
+        The relative stage y-coordinates in px
+    z_coordinates : list
+        The relative stage z-coordinates in px
     """
 
     outCSV = str(source) + "TileConfiguration.txt"
@@ -259,13 +291,14 @@ def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinate
 
 
 def run_GC_stitcher(source, fusion_method):
-    """Run the Grid/collection stitching using a TileConfiguration.txt
+    """Run the Grid/Collection stitching using a TileConfiguration.txt
 
-    Arguments:
-        source {string} -- directory to the TileConfiguration.txt and the imagefiles
-
-    Returns:
-        nothing
+    Parameters
+    ----------
+    source : str
+        Directory to the TileConfiguration.txt and the imagefiles
+    fusion_method : str
+        Fusion method to use
     """
 
     if bigdata is True:
@@ -286,12 +319,12 @@ def run_GC_stitcher(source, fusion_method):
 def calibrate_current_image(xyz_calibration, unit):
     """Calibrate the currently active image
 
-    Arguments:
-        xyz_calibration {list} -- x,y,z image calibration in unit/px
-        unit {string} -- image calibration unit
-
-    Returns:
-        nothing
+    Parameters
+    ----------
+    xyz_calibration : list
+        x,y,z image calibration in unit/px
+    unit : str
+        Image calibration unit
     """
 
     imp = wm.getCurrentImage()
@@ -302,15 +335,21 @@ def calibrate_current_image(xyz_calibration, unit):
 
 
 def save_current_image_as_tiff(filename, filetype, target):
-    """save the currently active image as ImageJ-Tiff
+    """Save the currently active image as ImageJ-Tiff
 
-    Arguments:
-        filename {string} -- filename of the image
-        filetype {string} -- the original filetype of the image
-        target {directory} -- directory where the image will be saved
+    Parameters
+    ----------
+    filename : str
+        Filename of the image
+    filetype : str
+        The original filetype of the image
+    target : str
+        Directory where the image will be saved
 
-    Returns:
-        nothing
+    Returns
+    -------
+    str
+        Path to save the data
     """
 
     imp = wm.getCurrentImage()
@@ -325,15 +364,21 @@ def save_current_image_as_tiff(filename, filetype, target):
 
 
 def save_current_image_as_bdv(filename, filetype, target):
-    """save the currently active image as BigDataViewer hdf5/xml
+    """Save the currently active image as BigDataViewer hdf5/xml
 
-    Arguments:
-        filename {string} -- filename of the image
-        filetype {string} -- the original filetype of the image
-        target {directory} -- directory where the image will be saved
+    Parameters
+    ----------
+    filename : str
+        Filename of the image
+    filetype : str
+        The original filetype of the image
+    target : str
+        Directory where the image will be saved
 
-    Returns:
-        nothing
+    Returns
+    -------
+    str
+        Path to save the data
     """
 
     imp = wm.getCurrentImage()
@@ -348,15 +393,21 @@ def save_current_image_as_bdv(filename, filetype, target):
 
 
 def save_current_image_as_ics1(filename, filetype, target):
-    """save the currently active image as ics/ids using scifio
+    """Save the currently active image as ICS/IDS using scifio
 
-    Arguments:
-        filename {string} -- filename of the image
-        filetype {string} -- the original filetype of the image
-        target {directory} -- directory where the image will be saved
+    Parameters
+    ----------
+    filename : str
+        Filename of the image
+    filetype : str
+        The original filetype of the image
+    target : str
+        Directory where the image will be saved
 
-    Returns:
-        nothing
+    Returns
+    -------
+    str
+        Path to save the data
     """
 
     img = ImageDisplayService.getActiveDataset()
@@ -371,18 +422,21 @@ def save_current_image_as_ics1(filename, filetype, target):
 
 
 def save_current_image_with_BF_as_ics1(filename, filetype, target):
-    """saves a given ImagePlus as ics1 using Bio-Formats
+    """Save the currently active image as ICS1 using BF
 
     Parameters
     ----------
-    imp : ImagePlus
-        an open ImagePlus to be saved
     filename : str
         Filename of the image
     filetype : str
         The original filetype of the image
-    target : string
-        path to the original image on disc
+    target : str
+        Directory where the image will be saved
+
+    Returns
+    -------
+    str
+        Path to save the data
     """
 
     imp = wm.getCurrentImage()
@@ -397,15 +451,15 @@ def save_current_image_with_BF_as_ics1(filename, filetype, target):
 
 
 def open_sequential_gcimages_withBF(source, image_dimensions_czt):
-    """use Bio-formats to open all sequential images written by the Grid/collection stitcher
+    """Use Bio-formats to open all sequential images written by the Grid/collection stitcher
     in a folder as virtual stack
 
-    Arguments:
-        source {string} -- directory to the imagefiles
-        image_dimensions_czt {list} -- number of images in dimensions c,z,t
-
-    Returns:
-        nothing
+    Parameters
+    ----------
+    source : str
+        Directory to the image files
+    image_dimensions_czt : list
+        Number of images in dimensions c,z,t
     """
 
     c_end = str(image_dimensions_czt[0])
@@ -424,15 +478,15 @@ def open_sequential_gcimages_withBF(source, image_dimensions_czt):
 
 
 def open_sequential_gcimages_from_folder(source, image_dimensions_czt):
-    """use IJ "import image sequence" to open all sequential images written by the Grid/collection stitcher
+    """Use IJ "import image sequence" to open all sequential images written by the Grid/collection stitcher
     in a folder as virtual stack. Bio-Formats seems to have a limit in XY size.
 
-    Arguments:
-        source {string} -- directory to the imagefiles
-        image_dimensions_czt {list} -- number of images in dimensions c,z,t
-
-    Returns:
-        nothing
+    Parameters
+    ----------
+    source : str
+        Directory to the image files
+    image_dimensions_czt : list
+        Number of images in dimensions c,z,t
     """
 
     c_end = image_dimensions_czt[0]
@@ -446,13 +500,17 @@ def open_sequential_gcimages_from_folder(source, image_dimensions_czt):
 
 
 def get_folder_size(source):
-    """determines the size of a given directory and its subdirectories in bytes
+    """Determines the size of a given directory and its subdirectories in bytes
 
-    Arguments:
-        source {string} -- directory which size should be determined
+    Parameters
+    ----------
+    source : str
+        Directory which size should be determined
 
-    Returns:
-        total_size {integer} -- the size of the source folder in bytes
+    Returns
+    -------
+    int
+        Size of the source folder in bytes
     """
 
     total_size = 0
@@ -499,7 +557,7 @@ def locate_latest_imaris(paths_to_check=None):
     return imaris_paths[-1]
 
 def convert_to_imaris2(convert_to_ims, path_to_image):
-    """convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
+    """Convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
 
     Parameters
     ----------
@@ -526,7 +584,7 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
         IJ.log("Conversion to .ims is finished")
 
 def send_mail( sender, recipient, filename, total_execution_time_min ):
-    """send an email via smtp.unibas.ch.
+    """Send an email via smtp.unibas.ch.
     Will likely NOT work without connection to the unibas network.
 
     Parameters
@@ -560,13 +618,29 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
        print "Error: unable to send email"
 
 def sorted_alphanumeric(data):
+    """Sort a list alphanumerically
+
+    Parameters
+    ----------
+    data : list
+        List of filenames to sort
+
+    Returns
+    -------
+    list
+        Sorted list
+    """
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(data, key=alphanum_key)
 
+# ─── Main Code ────────────────────────────────────────────────────────────────
 
 # start the process
 execution_start_time = time.time()
+
+if not filetype.startswith("."):
+    filetype = "." + filetype
 
 # In case script is ran batch
 if os.path.isfile(source.getAbsolutePath()):
