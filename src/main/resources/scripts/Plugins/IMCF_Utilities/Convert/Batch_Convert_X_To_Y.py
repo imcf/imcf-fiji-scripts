@@ -170,6 +170,8 @@ out_ext["OME-TIFF2"] = ".tif"
 out_ext["CellH5"] = ".ch5"
 out_ext["BMP"] = ".bmp"
 
+pad_number = 0
+
 # # If the list of files is not empty
 if files:
 
@@ -186,7 +188,8 @@ if files:
         IJ.log("\\Update3:Currently opening " + basename + "...")
 
         series_count = get_series_count_from_ome_metadata(file)
-        pad_number = len(str(series_count))
+        if not pad_number:
+            pad_number = len(str(series_count))
 
         for series in range(series_count):
             progress_bar(series + 1, series_count, 2, "Opening series : ")
