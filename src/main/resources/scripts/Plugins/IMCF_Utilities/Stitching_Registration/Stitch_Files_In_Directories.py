@@ -634,6 +634,30 @@ def sorted_alphanumeric(data):
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(data, key=alphanum_key)
 
+def elapsed_time_since(start,end=None):
+    """Prints the elapsed time for execution
+
+    Parameters
+    ----------
+    start : time
+        Start time
+    end : time, optional
+        End time
+
+    Returns
+    -------
+    str
+        Formatted time elapsed
+    """
+
+    if not end:
+        end = time.time()
+
+    hours, rem = divmod(end-start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds)
+
+
 # ─── Main Code ────────────────────────────────────────────────────────────────
 
 # start the process
@@ -698,7 +722,7 @@ for source in all_source_dirs:
     IJ.run("Collect Garbage", "")
     time.sleep(60.0)
 
-total_execution_time_min = (time.time() - execution_start_time) / 60.0
+total_execution_time_min = elapsed_time_since(execution_start_time)
 
 if email_address != "":
     send_mail( "imcf@unibas.ch", email_address, source, total_execution_time_min )
@@ -712,5 +736,5 @@ IJ.log("number of folders stitched: " + str(len(all_source_dirs)))
 IJ.log("quick stitch by stage coordinates: " + str(quick))
 IJ.log("save as BigDataViewer hdf5 instead: " + str(bdv))
 IJ.log("conserve RAM= " + str(bigdata))
-IJ.log("total time in minutes: " + str(total_execution_time_min))
+IJ.log("total time in [HH:MM:SS:ss]: " + str(total_execution_time_min))
 IJ.log("All done")
