@@ -290,7 +290,7 @@ def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinate
     f.close()
 
 
-def run_GC_stitcher(source, fusion_method):
+def run_GC_stitcher(source, fusion_method, bigdata):
     """Run the Grid/Collection stitching using a TileConfiguration.txt
 
     Parameters
@@ -681,7 +681,7 @@ else:
 
 for source in all_source_dirs:
     IJ.log("now working on " + source)
-    print "bigdata= ", str(bigdata)
+    print("bigdata= ", str(bigdata))
     free_memory_bytes = MemoryTools().totalAvailableMemory()
     folder_size_bytes = get_folder_size(source)
     if free_memory_bytes / folder_size_bytes < 3.5:
@@ -692,7 +692,7 @@ for source in all_source_dirs:
 
     ome_metadata = get_ome_metadata(source, allimages)
     write_tileconfig(source, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
-    run_GC_stitcher(source, fusion_method)
+    run_GC_stitcher(source, fusion_method, bigdata)
 
     if bigdata and not only_register:
         path = source + "temp/"
