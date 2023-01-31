@@ -1,7 +1,8 @@
 #@ File(label="Folder with your images", style="directory", description="Input folder") src_dir
-#@ File(label="Folder to save your images", style="directory", description="Output folder") out_dir
+#@ File(label="Folder to save your images", style="directory", description="Output folder", required=False) out_dir
 #@ String(label="Extension for the images to look for", value="nd2") filename_filter
 #@ String(label="Save as file type", choices={"ICS-1","ICS-2","OME-TIFF1","OME-TIFF2", "ImageJ-TIF", "CellH5", "BMP"}) out_file_extension
+#@ Boolean(label="Split channels ?", description="Split channels in channel specific folders ? ", value=False) split_channels
 
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
 
@@ -9,7 +10,7 @@ import os
 import fnmatch
 
 from ij import IJ
-from ij.plugin import StackWriter
+from ij.plugin import StackWriter, Duplicator
 
 # Bioformats imports
 from loci.plugins import BF, LociExporter
@@ -156,6 +157,8 @@ def open_single_series_with_BF(path_to_file, series_number):
 IJ.log("\\Clear")
 IJ.log("Script starting")
 
+if out_file_extension == "BMP":
+    split_channels = False
 # Retrieve list of files
 src_dir = str(src_dir)
 out_dir = str(out_dir)
