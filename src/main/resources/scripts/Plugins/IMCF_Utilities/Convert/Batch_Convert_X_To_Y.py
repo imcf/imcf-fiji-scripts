@@ -159,6 +159,10 @@ IJ.log("Script starting")
 
 if out_file_extension == "BMP":
     split_channels = False
+
+if out_dir is None:
+    out_dir = src_dir
+
 # Retrieve list of files
 src_dir = str(src_dir)
 out_dir = str(out_dir)
