@@ -152,6 +152,80 @@ def open_single_series_with_BF(path_to_file, series_number):
 
     return imps[0]
 
+def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
+
+    out_ext = {}
+    out_ext["ImageJ-TIF"] = ".tif"
+    out_ext["ICS-1"] = ".ids"
+    out_ext["ICS-2"] = ".ics"
+    out_ext["OME-TIFF1"] = ".ome.tif"
+    out_ext["OME-TIFF2"] = ".tif"
+    out_ext["CellH5"] = ".ch5"
+    out_ext["BMP"] = ".bmp"
+
+    imp_to_use = []
+    dir_to_save = []
+
+    if split_channels:
+        for channel in range(1, imageplus.getNChannels() + 1):
+            imp_to_use.append(
+                Duplicator().run(
+                    imageplus,
+                    channel, channel,
+                    1, imageplus.getNSlices(),
+                    1, imageplus.getNFrames()
+                )
+            )
+            dir_to_save.append(
+                os.path.join(
+                    out_dir,
+                    "C" + str(channel)
+                )
+            )
+    else:
+        imp_to_use.append(imageplus)
+        dir_to_save.append(out_dir)
+
+    for index, current_imp in enumerate(imp_to_use):
+
+        print(current_imp)
+        print(series)
+
+        basename = imageplus.getShortTitle()
+
+        out_path = os.path.join(
+                dir_to_save[index],
+                basename + "_series_"
+                + str(series).zfill(pad_number)
+            )
+
+        if extension == "ImageJ-TIF":
+
+            check_folder(dir_to_save[index])
+            IJ.saveAs(
+                current_imp,
+                "Tiff",
+                out_path + ".tif"
+            )
+
+        elif extension == "BMP":
+            out_folder = os.path.join(out_dir, basename + os.path.sep)
+            check_folder(out_folder)
+            StackWriter.save(current_imp, out_folder, "format=bmp")
+
+        else:
+            BFExport(
+                current_imp,
+                dir_to_save[index] + out_ext[extension]
+            )
+
+        current_imp.close()
+
+def check_folder(path):
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 # ─── MAIN CODE ──────────────────────────────────────────────────────────────────
 
 IJ.log("\\Clear")
@@ -167,15 +241,6 @@ if out_dir is None:
 src_dir = str(src_dir)
 out_dir = str(out_dir)
 files = getFileList(src_dir, filename_filter)
-
-out_ext = {}
-out_ext["ImageJ-TIF"] = ".tif"
-out_ext["ICS-1"] = ".ids"
-out_ext["ICS-2"] = ".ics"
-out_ext["OME-TIFF1"] = ".ome.tif"
-out_ext["OME-TIFF2"] = ".tif"
-out_ext["CellH5"] = ".ch5"
-out_ext["BMP"] = ".bmp"
 
 pad_number = 0
 
@@ -203,33 +268,19 @@ if files:
 
             imp = open_single_series_with_BF(file, series)
 
-            if out_file_extension == "ImageJ-TIF":
-                IJ.saveAs(
-                    imp,
-                    "Tiff",
-                    os.path.join(
-                        out_dir,
-                        basename + "_series_"
-                        + str(series).zfill(pad_number)
-                        + ".tif"))
-            elif out_file_extension == "BMP":
-                out_folder = os.path.join(out_dir, basename + os.path.sep)
+            if "macro image" in imp.getTitle():
+                print("Skipping macro image...")
+                imp.close()
+                continue
 
-                if not os.path.exists(out_folder):
-                    os.makedirs(out_folder)
-
-                StackWriter.save(imp, out_folder, "format=bmp")
-
-            else:
-                BFExport(
-                    imp,
-                    os.path.join(
-                        out_dir,
-                        basename + "_series_"
-                        + str(series).zfill(pad_number)
-                        + out_ext[out_file_extension]
-                    )
-                )
+            save_as(
+                imp,
+                out_file_extension,
+                out_dir,
+                series,
+                pad_number,
+                split_channels
+            )
 
             imp.close()
 
