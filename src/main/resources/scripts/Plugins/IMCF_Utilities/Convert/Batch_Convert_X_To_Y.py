@@ -153,6 +153,23 @@ def open_single_series_with_BF(path_to_file, series_number):
     return imps[0]
 
 def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
+    """Function to save an image
+
+    Parameters
+    ----------
+    imageplus : ImagePlus
+        ImagePlus to save
+    extension : str
+        Extension to use for the output
+    out_dir : str
+        Path for the output
+    series : int
+        Series to open
+    pad_number : int
+        Number of 0 to use for padding
+    split_channels : bool
+        Bool to split or not the channels
+    """
 
     out_ext = {}
     out_ext["ImageJ-TIF"] = ".tif"
@@ -187,9 +204,6 @@ def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
         dir_to_save.append(out_dir)
 
     for index, current_imp in enumerate(imp_to_use):
-
-        print(current_imp)
-        print(series)
 
         basename = imageplus.getShortTitle()
 
