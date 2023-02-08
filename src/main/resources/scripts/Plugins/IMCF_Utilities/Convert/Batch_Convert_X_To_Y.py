@@ -230,7 +230,7 @@ def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
         else:
             BFExport(
                 current_imp,
-                dir_to_save[index] + out_ext[extension]
+                out_path + out_ext[extension]
             )
 
         current_imp.close()
@@ -245,14 +245,17 @@ def check_folder(path):
 IJ.log("\\Clear")
 IJ.log("Script starting")
 
+# Retrieve list of files
+src_dir = str(src_dir)
+
 if out_file_extension == "BMP":
     split_channels = False
 
 if out_dir is None:
-    out_dir = src_dir
+    out_dir = os.path.join(src_dir, "out")
+    os.makedirs(out_dir)
 
-# Retrieve list of files
-src_dir = str(src_dir)
+
 out_dir = str(out_dir)
 files = getFileList(src_dir, filename_filter)
 
