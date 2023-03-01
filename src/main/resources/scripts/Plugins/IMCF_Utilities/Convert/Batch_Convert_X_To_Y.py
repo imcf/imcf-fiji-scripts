@@ -251,9 +251,11 @@ src_dir = str(src_dir)
 if out_file_extension == "BMP":
     split_channels = False
 
+temp_out_dir = os.path.join(src_dir, "out")
 if out_dir is None:
-    out_dir = os.path.join(src_dir, "out")
-    os.makedirs(out_dir)
+    out_dir = temp_out_dir
+    if not os.path.exists(temp_out_dir):
+        os.makedirs(out_dir)
 
 
 out_dir = str(out_dir)
@@ -273,8 +275,8 @@ if files:
         basename = os.path.splitext(basename)[0]
 
         # Import the file with BioFormats
-        progress_bar(file_id + 1, len(files), 2, "Processing: " + str(file_id))
-        IJ.log("\\Update3:Currently opening " + basename + "...")
+        progress_bar(file_id + 1, len(files), 1, "Processing: " + str(file_id))
+        # IJ.log("\\Update3:Currently opening " + basename + "...")
 
         series_count = get_series_count_from_ome_metadata(file)
         if not pad_number:
