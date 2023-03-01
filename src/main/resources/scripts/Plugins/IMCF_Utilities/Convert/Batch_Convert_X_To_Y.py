@@ -117,6 +117,7 @@ def get_series_count_from_ome_metadata(path_to_file):
         Number of series for the file
     """
     reader = ImageReader()
+    reader.setFlattenedResolutions(False)
     omeMeta = MetadataTools.createOMEXMLMetadata()
     reader.setMetadataStore(omeMeta)
     reader.setId(path_to_file)
