@@ -189,12 +189,12 @@ def get_ome_metadata(source, imagenames):
                 z_interval = physSizeZ.value()
 
             if frame_size_z > 1 and physSizeZ is None:
-                print "no z calibration found, trying to recover"
+                print("no z calibration found, trying to recover")
                 first_plane = omeMeta.getPlanePositionZ(0, 0)
                 next_plane_imagenumber = frame_size_c + frame_size_t - 1
                 second_plane = omeMeta.getPlanePositionZ(0, next_plane_imagenumber)
                 z_interval = abs(abs(first_plane.value()) - abs(second_plane.value()))
-                print "z-interval seems to be: ", z_interval
+                print("z-interval seems to be: " + str(z_interval))
 
             # create an image calibration
             image_calibration = [physSizeX.value(), physSizeY.value(), z_interval]
@@ -213,7 +213,7 @@ def get_ome_metadata(source, imagenames):
         pos_y = current_position_y.value()
 
         if current_position_z is None:
-            print "the z-position is missing in the ome-xml metadata."
+            print("the z-position is missing in the ome-xml metadata.")
             pos_z = 1.0
         else:
             pos_z = current_position_z.value()
@@ -356,7 +356,7 @@ def save_current_image_as_tiff(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.tif")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.saveAs(imp, "Tiff", savepath)
     imp.close()
 
@@ -385,7 +385,7 @@ def save_current_image_as_bdv(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.xml")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.run("Export Current Image as XML/HDF5", "  use_deflate_compression export_path=["+savepath+"]")
     imp.close()
 
@@ -414,7 +414,7 @@ def save_current_image_as_ics1(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.ics")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     io.save(img, savepath)
     IJ.run("Close")
 
@@ -443,7 +443,7 @@ def save_current_image_with_BF_as_ics1(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.ids")
     savepath = os.path.join(target, savename)
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.run(imp, "Bio-Formats Exporter", "save=[" + savepath + "]")
     imp.close()
 
@@ -613,9 +613,9 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
     try:
        smtpObj = smtplib.SMTP("smtp.unibas.ch")
        smtpObj.sendmail( sender, recipient, message % ( recipient, filename, total_execution_time_min ) )
-       print "Successfully sent email"
+       print("Successfully sent email")
     except smtplib.SMTPException:
-       print "Error: unable to send email"
+       print("Error: unable to send email")
 
 def sorted_alphanumeric(data):
     """Sort a list alphanumerically
@@ -727,7 +727,7 @@ total_execution_time_min = elapsed_time_since(execution_start_time)
 if email_address != "":
     send_mail( "imcf@unibas.ch", email_address, source, total_execution_time_min )
 else:
-    print "Email address field is empty, no email was sent"
+    print("Email address field is empty, no email was sent")
 
 
 # update the log
