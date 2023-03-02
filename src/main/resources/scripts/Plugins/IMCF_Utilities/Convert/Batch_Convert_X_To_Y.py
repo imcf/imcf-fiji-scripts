@@ -103,7 +103,7 @@ def progress_bar(progress, total, line_number, prefix=''):
     x    = int(size*progress/total)
     IJ.log("\\Update%i:%s\t[%s%s] %i/%i\r" % (line_number, prefix, "#"*x, "."*(size-x), progress, total))
 
-def get_series_count_from_ome_metadata(path_to_file):
+def get_series_info_from_ome_metadata(path_to_file):
     """Get the number of series from a file
 
     Parameters
@@ -122,9 +122,21 @@ def get_series_count_from_ome_metadata(path_to_file):
     reader.setMetadataStore(omeMeta)
     reader.setId(path_to_file)
     series_count = reader.getSeriesCount()
+
+    series_index = []
+    for i in range(series_count):
+        if i == 0:
+            resolution_count = 0
+            series_index.append(resolution_count)
+        else:
+            reader.setSeries(i-1)
+            resolution_count += reader.getResolutionCount()
+            series_index.append(resolution_count)
+
     reader.close()
 
-    return series_count
+    return series_count, series_index
+
 
 def open_single_series_with_BF(path_to_file, series_number):
     """Open a single serie for a file using Bio-Formats
@@ -278,14 +290,14 @@ if files:
         progress_bar(file_id + 1, len(files), 1, "Processing: " + str(file_id))
         # IJ.log("\\Update3:Currently opening " + basename + "...")
 
-        series_count = get_series_count_from_ome_metadata(file)
+        series_count, series_index = get_series_info_from_ome_metadata(file)
         if not pad_number:
             pad_number = len(str(series_count))
 
         for series in range(series_count):
             progress_bar(series + 1, series_count, 2, "Opening series : ")
 
-            imp = open_single_series_with_BF(file, series)
+            imp = open_single_series_with_BF(file, series_index[series])
 
             if "macro image" in imp.getTitle():
                 print("Skipping macro image...")
