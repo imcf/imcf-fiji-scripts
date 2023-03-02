@@ -1,7 +1,7 @@
 #@ File(label="Folder with your images", style="directory", description="Input folder") src_dir
 #@ File(label="Folder to save your images", style="directory", description="Output folder", required=False) out_dir
 #@ String(label="Extension for the images to look for", value="nd2") filename_filter
-#@ String(label="Save as file type", choices={"ICS-1","ICS-2","OME-TIFF1","OME-TIFF2", "ImageJ-TIF", "CellH5", "BMP"}) out_file_extension
+#@ String(label="Save as file type", choices={"ICS-1","ICS-2","OME-TIFF", "ImageJ-TIF", "CellH5", "BMP"}) out_file_extension
 #@ Boolean(label="Split channels ?", description="Split channels in channel specific folders ? ", value=False) split_channels
 
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
@@ -176,8 +176,7 @@ def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
     out_ext["ImageJ-TIF"] = ".tif"
     out_ext["ICS-1"] = ".ids"
     out_ext["ICS-2"] = ".ics"
-    out_ext["OME-TIFF1"] = ".ome.tif"
-    out_ext["OME-TIFF2"] = ".tif"
+    out_ext["OME-TIFF"] = ".ome.tif"
     out_ext["CellH5"] = ".ch5"
     out_ext["BMP"] = ".bmp"
 
