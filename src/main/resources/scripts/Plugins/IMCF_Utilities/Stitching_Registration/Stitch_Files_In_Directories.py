@@ -157,7 +157,6 @@ def get_ome_metadata(source, imagenames):
     stage_coordinates_z = []
 
     for counter, image in enumerate(imagenames):
-
         # parse metadata
         reader = ImageReader()
         omeMeta = MetadataTools.createOMEXMLMetadata()
@@ -189,12 +188,12 @@ def get_ome_metadata(source, imagenames):
                 z_interval = physSizeZ.value()
 
             if frame_size_z > 1 and physSizeZ is None:
-                print "no z calibration found, trying to recover"
+                print("no z calibration found, trying to recover")
                 first_plane = omeMeta.getPlanePositionZ(0, 0)
                 next_plane_imagenumber = frame_size_c + frame_size_t - 1
                 second_plane = omeMeta.getPlanePositionZ(0, next_plane_imagenumber)
                 z_interval = abs(abs(first_plane.value()) - abs(second_plane.value()))
-                print "z-interval seems to be: ", z_interval
+                print("z-interval seems to be: " + str(z_interval))
 
             # create an image calibration
             image_calibration = [physSizeX.value(), physSizeY.value(), z_interval]
@@ -213,7 +212,7 @@ def get_ome_metadata(source, imagenames):
         pos_y = current_position_y.value()
 
         if current_position_z is None:
-            print "the z-position is missing in the ome-xml metadata."
+            print("the z-position is missing in the ome-xml metadata.")
             pos_z = 1.0
         else:
             pos_z = current_position_z.value()
@@ -356,7 +355,7 @@ def save_current_image_as_tiff(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.tif")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.saveAs(imp, "Tiff", savepath)
     imp.close()
 
@@ -385,7 +384,7 @@ def save_current_image_as_bdv(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.xml")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.run("Export Current Image as XML/HDF5", "  use_deflate_compression export_path=["+savepath+"]")
     imp.close()
 
@@ -414,7 +413,7 @@ def save_current_image_as_ics1(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.ics")
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     io.save(img, savepath)
     IJ.run("Close")
 
@@ -443,7 +442,7 @@ def save_current_image_with_BF_as_ics1(filename, filetype, target):
     savename = filename.replace(filetype, "_stitched.ids")
     savepath = os.path.join(target, savename)
     IJ.log("now saving: " + str(savepath))
-    print "now saving", savepath
+    print("now saving " + savepath)
     IJ.run(imp, "Bio-Formats Exporter", "save=[" + savepath + "]")
     imp.close()
 
@@ -524,7 +523,7 @@ def get_folder_size(source):
     return total_size
 
 
-def locate_latest_imaris(paths_to_check=None):
+def locate_latest_imaris(big_data):
     """Find paths to latest installed Imaris or ImarisFileConverter version.
 
     Parameters
@@ -540,10 +539,15 @@ def locate_latest_imaris(paths_to_check=None):
         or Imaris installation folder with the latter one having priority.
         Will be empty if nothing is found.
     """
-    if not paths_to_check:
+
+    if big_data:
         paths_to_check = [
             r"C:\Program Files\Bitplane\ImarisFileConverter ",
             r"C:\Program Files\Bitplane\Imaris ",
+        ]
+    else:
+        paths_to_check = [
+            r"C:\Program Files\Bitplane\ImarisConvertBioformats "
         ]
 
     imaris_paths = [""]
@@ -556,7 +560,7 @@ def locate_latest_imaris(paths_to_check=None):
 
     return imaris_paths[-1]
 
-def convert_to_imaris2(convert_to_ims, path_to_image):
+def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
     """Convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
 
     Parameters
@@ -573,8 +577,13 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
             file_extension = ".ics"
             path_to_image = path_root + file_extension
 
-        os.chdir(locate_latest_imaris())
-        command = 'ImarisConvert.exe -i "%s" -of Imaris5 -o "%s"' % (
+        os.chdir(locate_latest_imaris(bigdata))
+        if bigdata:
+            exe_command = "ImarisConvert.exe"
+        else:
+            exe_command = "ImarisConvertBioformats.exe"
+        command = '"%s"  -i "%s" -of Imaris5 -o "%s"' % (
+            exe_command,
             path_to_image,
             path_to_image.replace(file_extension,".ims")
         )
@@ -613,9 +622,9 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
     try:
        smtpObj = smtplib.SMTP("smtp.unibas.ch")
        smtpObj.sendmail( sender, recipient, message % ( recipient, filename, total_execution_time_min ) )
-       print "Successfully sent email"
+       print("Successfully sent email")
     except smtplib.SMTPException:
-       print "Error: unable to send email"
+       print("Error: unable to send email")
 
 def sorted_alphanumeric(data):
     """Sort a list alphanumerically
@@ -679,38 +688,42 @@ if only_register:
 else:
     fusion_method = "Linear Blending"
 
-for source in all_source_dirs:
-    IJ.log("now working on " + source)
+for source_dir in all_source_dirs:
+    IJ.log("now working on " + source_dir)
     print("bigdata= ", str(bigdata))
     free_memory_bytes = MemoryTools().totalAvailableMemory()
-    folder_size_bytes = get_folder_size(source)
+    folder_size_bytes = get_folder_size(source_dir)
     if free_memory_bytes / folder_size_bytes < 3.5:
         bigdata = True
         IJ.log("not enough free RAM, switching to BigData mode (slow)")
 
-    allimages = list_all_filenames(source, filetype)
+    allimages = list_all_filenames(source_dir, filetype)
 
-    ome_metadata = get_ome_metadata(source, allimages)
-    write_tileconfig(source, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
-    run_GC_stitcher(source, fusion_method, bigdata)
+    ome_metadata = get_ome_metadata(source_dir, allimages)
+    # if filetype == "ome.tif":
+    #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
+    # else:
+    write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
+    # sys.exit(0)
+    run_GC_stitcher(source_dir, fusion_method, bigdata)
 
     if bigdata and not only_register:
-        path = source + "temp/"
+        path = source_dir + "temp/"
         open_sequential_gcimages_from_folder(path, ome_metadata[9])
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
         shutil.rmtree(path, ignore_errors = True) # remove temp folder
 
     if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source_dir)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     # run the garbage collector to clear the memory
     # Seems to not work in a function and needs to be started several times with waits in between :(
@@ -727,7 +740,7 @@ total_execution_time_min = elapsed_time_since(execution_start_time)
 if email_address != "":
     send_mail( "imcf@unibas.ch", email_address, source, total_execution_time_min )
 else:
-    print "Email address field is empty, no email was sent"
+    print("Email address field is empty, no email was sent")
 
 
 # update the log
@@ -738,3 +751,5 @@ IJ.log("save as BigDataViewer hdf5 instead: " + str(bdv))
 IJ.log("conserve RAM= " + str(bigdata))
 IJ.log("total time in [HH:MM:SS:ss]: " + str(total_execution_time_min))
 IJ.log("All done")
+IJ.selectWindow("Log")
+IJ.saveAs("Text", os.path.join(source,"stitch_log"))

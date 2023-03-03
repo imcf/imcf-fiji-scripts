@@ -1,7 +1,7 @@
 #@ File(label="Folder with your images", style="directory", description="Input folder") src_dir
 #@ File(label="Folder to save your images", style="directory", description="Output folder", required=False) out_dir
 #@ String(label="Extension for the images to look for", value="nd2") filename_filter
-#@ String(label="Save as file type", choices={"ICS-1","ICS-2","OME-TIFF1","OME-TIFF2", "ImageJ-TIF", "CellH5", "BMP"}) out_file_extension
+#@ String(label="Save as file type", choices={"ICS-1","ICS-2","OME-TIFF", "ImageJ-TIF", "CellH5", "BMP"}) out_file_extension
 #@ Boolean(label="Split channels ?", description="Split channels in channel specific folders ? ", value=False) split_channels
 
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ def progress_bar(progress, total, line_number, prefix=''):
     x    = int(size*progress/total)
     IJ.log("\\Update%i:%s\t[%s%s] %i/%i\r" % (line_number, prefix, "#"*x, "."*(size-x), progress, total))
 
-def get_series_count_from_ome_metadata(path_to_file):
+def get_series_info_from_ome_metadata(path_to_file):
     """Get the number of series from a file
 
     Parameters
@@ -117,13 +117,26 @@ def get_series_count_from_ome_metadata(path_to_file):
         Number of series for the file
     """
     reader = ImageReader()
+    reader.setFlattenedResolutions(False)
     omeMeta = MetadataTools.createOMEXMLMetadata()
     reader.setMetadataStore(omeMeta)
     reader.setId(path_to_file)
     series_count = reader.getSeriesCount()
+
+    series_index = []
+    for i in range(series_count):
+        if i == 0:
+            resolution_count = 0
+            series_index.append(resolution_count)
+        else:
+            reader.setSeries(i-1)
+            resolution_count += reader.getResolutionCount()
+            series_index.append(resolution_count)
+
     reader.close()
 
-    return series_count
+    return series_count, series_index
+
 
 def open_single_series_with_BF(path_to_file, series_number):
     """Open a single serie for a file using Bio-Formats
@@ -175,8 +188,7 @@ def save_as(imageplus, extension, out_dir, series, pad_number, split_channels):
     out_ext["ImageJ-TIF"] = ".tif"
     out_ext["ICS-1"] = ".ids"
     out_ext["ICS-2"] = ".ics"
-    out_ext["OME-TIFF1"] = ".ome.tif"
-    out_ext["OME-TIFF2"] = ".tif"
+    out_ext["OME-TIFF"] = ".ome.tif"
     out_ext["CellH5"] = ".ch5"
     out_ext["BMP"] = ".bmp"
 
@@ -251,9 +263,11 @@ src_dir = str(src_dir)
 if out_file_extension == "BMP":
     split_channels = False
 
+temp_out_dir = os.path.join(src_dir, "out")
 if out_dir is None:
-    out_dir = os.path.join(src_dir, "out")
-    os.makedirs(out_dir)
+    out_dir = temp_out_dir
+    if not os.path.exists(temp_out_dir):
+        os.makedirs(out_dir)
 
 
 out_dir = str(out_dir)
@@ -273,17 +287,17 @@ if files:
         basename = os.path.splitext(basename)[0]
 
         # Import the file with BioFormats
-        progress_bar(file_id + 1, len(files), 2, "Processing: " + str(file_id))
-        IJ.log("\\Update3:Currently opening " + basename + "...")
+        progress_bar(file_id + 1, len(files), 1, "Processing: " + str(file_id))
+        # IJ.log("\\Update3:Currently opening " + basename + "...")
 
-        series_count = get_series_count_from_ome_metadata(file)
+        series_count, series_index = get_series_info_from_ome_metadata(file)
         if not pad_number:
             pad_number = len(str(series_count))
 
         for series in range(series_count):
             progress_bar(series + 1, series_count, 2, "Opening series : ")
 
-            imp = open_single_series_with_BF(file, series)
+            imp = open_single_series_with_BF(file, series_index[series])
 
             if "macro image" in imp.getTitle():
                 print("Skipping macro image...")
