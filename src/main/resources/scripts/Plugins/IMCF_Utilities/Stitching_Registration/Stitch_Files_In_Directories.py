@@ -524,7 +524,7 @@ def get_folder_size(source):
     return total_size
 
 
-def locate_latest_imaris(paths_to_check=None):
+def locate_latest_imaris(big_data):
     """Find paths to latest installed Imaris or ImarisFileConverter version.
 
     Parameters
@@ -540,10 +540,15 @@ def locate_latest_imaris(paths_to_check=None):
         or Imaris installation folder with the latter one having priority.
         Will be empty if nothing is found.
     """
-    if not paths_to_check:
+
+    if big_data:
         paths_to_check = [
             r"C:\Program Files\Bitplane\ImarisFileConverter ",
             r"C:\Program Files\Bitplane\Imaris ",
+        ]
+    else:
+        paths_to_check = [
+            r"C:\Program Files\Bitplane\ImarisConvertBioformats "
         ]
 
     imaris_paths = [""]
@@ -556,7 +561,7 @@ def locate_latest_imaris(paths_to_check=None):
 
     return imaris_paths[-1]
 
-def convert_to_imaris2(convert_to_ims, path_to_image):
+def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
     """Convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
 
     Parameters
@@ -573,8 +578,13 @@ def convert_to_imaris2(convert_to_ims, path_to_image):
             file_extension = ".ics"
             path_to_image = path_root + file_extension
 
-        os.chdir(locate_latest_imaris())
-        command = 'ImarisConvert.exe -i "%s" -of Imaris5 -o "%s"' % (
+        os.chdir(locate_latest_imaris(bigdata))
+        if bigdata:
+            exe_command = "ImarisConvert.exe"
+        else:
+            exe_command = "ImarisConvertBioformats.exe"
+        command = '"%s"  -i "%s" -of Imaris5 -o "%s"' % (
+            exe_command,
             path_to_image,
             path_to_image.replace(file_extension,".ims")
         )
@@ -700,17 +710,18 @@ for source in all_source_dirs:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
         convert_to_imaris2(convert_to_ims, path_to_image)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
         shutil.rmtree(path, ignore_errors = True) # remove temp folder
 
     if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     # run the garbage collector to clear the memory
     # Seems to not work in a function and needs to be started several times with waits in between :(
