@@ -157,7 +157,6 @@ def get_ome_metadata(source, imagenames):
     stage_coordinates_z = []
 
     for counter, image in enumerate(imagenames):
-
         # parse metadata
         reader = ImageReader()
         omeMeta = MetadataTools.createOMEXMLMetadata()
@@ -689,38 +688,41 @@ if only_register:
 else:
     fusion_method = "Linear Blending"
 
-for source in all_source_dirs:
-    IJ.log("now working on " + source)
+for source_dir in all_source_dirs:
+    IJ.log("now working on " + source_dir)
     print("bigdata= ", str(bigdata))
     free_memory_bytes = MemoryTools().totalAvailableMemory()
-    folder_size_bytes = get_folder_size(source)
+    folder_size_bytes = get_folder_size(source_dir)
     if free_memory_bytes / folder_size_bytes < 3.5:
         bigdata = True
         IJ.log("not enough free RAM, switching to BigData mode (slow)")
 
-    allimages = list_all_filenames(source, filetype)
+    allimages = list_all_filenames(source_dir, filetype)
 
-    ome_metadata = get_ome_metadata(source, allimages)
-    write_tileconfig(source, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
-    run_GC_stitcher(source, fusion_method, bigdata)
+    ome_metadata = get_ome_metadata(source_dir, allimages)
+    # if filetype == "ome.tif":
+    #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
+    # else:
+    write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
+    # sys.exit(0)
+    run_GC_stitcher(source_dir, fusion_method, bigdata)
 
     if bigdata and not only_register:
-        path = source + "temp/"
+        path = source_dir + "temp/"
         open_sequential_gcimages_from_folder(path, ome_metadata[9])
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
-        convert_to_imaris2(convert_to_ims, path_to_image)
+        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
         convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
         shutil.rmtree(path, ignore_errors = True) # remove temp folder
 
     if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source)
+        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
         convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source)
+        path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source_dir)
         convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     # run the garbage collector to clear the memory
