@@ -317,13 +317,8 @@ new_ome.addPlate(new_plate)
 
 new_ome_str = new_ome.toString()
 
-# dbf = DocumentBuilderFactory.newInstance()
-# db = dbf.newDocumentBuilder()
 
 XMLWriter().writeFile(File(out_xml), new_ome, False)
 
-# f = open(out_xml, "wb")
-# f.write(new_ome_str)
-# f.close()
 
 IJ.log("FINISHED")
