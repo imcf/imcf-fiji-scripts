@@ -248,6 +248,7 @@ new_plate.setID("Plate:0")
 out_xml = pathtools.join2(path_info["orig"], plate_name + ".companion.ome")
 
 well_list = []
+well_index = 0
 
 for file_index, file in enumerate(files):
     progressbar(file_index + 1, len(files), 1, "Working on : ")
@@ -272,15 +273,17 @@ for file_index, file in enumerate(files):
     if well_name not in well_list:
         well_list.append(well_name)
         new_well = Well()
-        new_well.setID("Well:0:%s" % file_index)
+        new_well.setID("Well:0:%s" % well_index)
         new_well.setRow(
             NonNegativeInteger(
                 Integer(string.ascii_lowercase.index(well_name[0].lower()))
             )
         )
         new_well.setColumn(NonNegativeInteger(Integer(well_name[1:])))
+        new_plate.addWell(new_well)
+        well_index = well_index + 1
     else:
-        new_well = Plate.getWell(well_list.index(well_name))
+        new_well = new_plate.getWell(well_list.index(well_name))
 
     for image_index in range(metadata_root.sizeOfImageList()):
         new_image = metadata_root.getImage(image_index)
@@ -302,7 +305,7 @@ for file_index, file in enumerate(files):
 
         new_well_sample = WellSample()
         new_well_sample.setID(
-            "WellSample:0:%s:%s" % (padded_index, new_well.sizeOfWellSampleList())
+            "WellSample:0:%s:%s" % (well_index, new_well.sizeOfWellSampleList())
         )
 
         new_well_sample.linkImage(new_image)
@@ -310,7 +313,6 @@ for file_index, file in enumerate(files):
 
         new_ome.addImage(new_image)
 
-    new_plate.addWell(new_well)
 new_ome.addPlate(new_plate)
 
 new_ome_str = new_ome.toString()
