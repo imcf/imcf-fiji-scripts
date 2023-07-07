@@ -9,7 +9,7 @@ import os
 import re
 import string
 
-from ome.xml.model import OME, Plate, Well, WellSample, UUID
+from ome.xml.model import OME, Plate, TiffData, Well, WellSample, UUID
 from ome.xml.model.primitives import NonNegativeInteger
 
 from ome.specification import XMLWriter
@@ -245,7 +245,10 @@ new_plate = Plate()
 new_plate.setName(plate_name)
 new_plate.setID("Plate:0")
 
-out_xml = pathtools.join2(path_info["orig"], plate_name + ".companion.ome")
+if filename_filter.startswith("tif"):
+    out_xml = pathtools.join2(path_info["orig"], plate_name + ".companion.ome")
+else:
+    out_xml = pathtools.join2(path_info["orig"], plate_name + ".ome.xml")
 
 well_list = []
 well_index = 0
@@ -286,21 +289,32 @@ for file_index, file in enumerate(files):
         new_well = new_plate.getWell(well_list.index(well_name))
 
     for image_index in range(metadata_root.sizeOfImageList()):
+        current_padded_index = pad_number(
+            image_index, len(str(metadata_root.sizeOfImageList()))
+        )
+
         new_image = metadata_root.getImage(image_index)
-        new_image.setID("Image:%s" % padded_index)
+        new_image.setID("Image:%s" % current_padded_index)
         new_image.setDescription("")
-        new_image.setName(file_info["fname"])
+        if metadata_root.sizeOfImageList() > 1:
+            image_name = new_image.getName()
+        else:
+            image_name = file_info["fname"]
+        new_image.setName(image_name)
 
         new_pxls = new_image.getPixels()
-        new_tiffdata = new_pxls.getTiffData(0)
+        try:
+            new_tiffdata = new_pxls.getTiffData(0)
+            new_uuid = UUID()
+            new_uuid.setFileName(image_name)
+            uuid_str = juuid.randomUUID().toString()
+            new_uuid.setValue("urn:uuid:%s" % uuid_str)
+            new_tiffdata.setUUID(new_uuid)
+        except:
+            new_tiffdata = TiffData()
+            # new_tiffdata.setIFD(NonNegativeInteger(0))
 
-        uuid_str = juuid.randomUUID().toString()
-
-        new_uuid = UUID()
-        new_uuid.setFileName(file_info["fname"])
-        new_uuid.setValue("urn:uuid:%s" % uuid_str)
-        new_tiffdata.setUUID(new_uuid)
-        new_pxls.setTiffData(0, new_tiffdata)
+        new_pxls.addTiffData(new_tiffdata)
         new_image.setPixels(new_pxls)
 
         new_well_sample = WellSample()
