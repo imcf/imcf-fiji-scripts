@@ -41,6 +41,7 @@ from ij.plugin import FolderOpener, HyperStackConverter
 
 # ─── Functions ────────────────────────────────────────────────────────────────
 
+
 def fix_ij_dirs(path):
     """Use forward slashes in directory paths
 
@@ -110,7 +111,7 @@ def list_all_filenames(source, filetype):
     """
 
     os.chdir(str(source))
-    allimages = sorted_alphanumeric(glob.glob("*"+filetype)) # sorted by name
+    allimages = sorted_alphanumeric(glob.glob("*" + filetype))  # sorted by name
 
     return allimages
 
@@ -227,20 +228,35 @@ def get_ome_metadata(source, imagenames):
     relative_coordinates_z_px = []
 
     for i in range(len(stage_coordinates_x)):
-        rel_pos_x = (stage_coordinates_x[i] - stage_coordinates_x[0]) / physSizeX.value()
-        rel_pos_y = (stage_coordinates_y[i] - stage_coordinates_y[0]) / physSizeY.value()
+        rel_pos_x = (
+            stage_coordinates_x[i] - stage_coordinates_x[0]
+        ) / physSizeX.value()
+        rel_pos_y = (
+            stage_coordinates_y[i] - stage_coordinates_y[0]
+        ) / physSizeY.value()
         rel_pos_z = (stage_coordinates_z[i] - stage_coordinates_z[0]) / z_interval
 
         relative_coordinates_x_px.append(rel_pos_x)
         relative_coordinates_y_px.append(rel_pos_y)
         relative_coordinates_z_px.append(rel_pos_z)
 
-    return (dimensions, stage_coordinates_x, stage_coordinates_y,
-        stage_coordinates_z, relative_coordinates_x_px, relative_coordinates_y_px,
-        relative_coordinates_z_px, image_calibration, calibration_unit, image_dimensions_czt)
+    return (
+        dimensions,
+        stage_coordinates_x,
+        stage_coordinates_y,
+        stage_coordinates_z,
+        relative_coordinates_x_px,
+        relative_coordinates_y_px,
+        relative_coordinates_z_px,
+        image_calibration,
+        calibration_unit,
+        image_dimensions_czt,
+    )
 
 
-def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinates, z_coordinates):
+def write_tileconfig(
+    source, dimensions, imagenames, x_coordinates, y_coordinates, z_coordinates
+):
     """Write a TileConfiguration.txt for the Grid/collection stitcher
 
     Parameters
@@ -271,25 +287,28 @@ def write_tileconfig(source, dimensions, imagenames, x_coordinates, y_coordinate
     c = z_coordinates
 
     if dimensions == 2:
-        coordinates_xyz = [" (" +str(m)+ "," +str(n)+ ")" for m,n in zip(a,b)]
+        coordinates_xyz = [" (" + str(m) + "," + str(n) + ")" for m, n in zip(a, b)]
 
     if dimensions == 3:
-        coordinates_xyz = [" (" +str(m)+ "," +str(n)+ "," +str(o)+ ")" for m,n,o in zip(a,b,c)]
+        coordinates_xyz = [
+            " (" + str(m) + "," + str(n) + "," + str(o) + ")"
+            for m, n, o in zip(a, b, c)
+        ]
 
-    empty_column = list(str(' ') * len(imagenames))
+    empty_column = list(str(" ") * len(imagenames))
 
-    final_line = [';'.join(i) for i in zip(imagenames,empty_column,coordinates_xyz)]
+    final_line = [";".join(i) for i in zip(imagenames, empty_column, coordinates_xyz)]
 
-    with open(outCSV,'wb') as f:
-        f.write(row_1 + '\n')
-        f.write(row_2 + '\n')
-        f.write(row_3 + '\n')
-        f.write(row_4 + '\n')
-        f.write('\n'.join(final_line))
+    with open(outCSV, "wb") as f:
+        f.write(row_1 + "\n")
+        f.write(row_2 + "\n")
+        f.write(row_3 + "\n")
+        f.write(row_4 + "\n")
+        f.write("\n".join(final_line))
     f.close()
 
 
-def run_GC_stitcher(source, fusion_method, bigdata):
+def run_GC_stitcher(source, fusion_method, bigdata, quick):
     """Run the Grid/Collection stitching using a TileConfiguration.txt
 
     Parameters
@@ -304,15 +323,38 @@ def run_GC_stitcher(source, fusion_method, bigdata):
         temp = source + "temp"
         if not os.path.exists(temp):
             os.mkdir(temp)
-        mode = "use_virtual_input_images computation_parameters=[Save computation time (but use more RAM)] image_output=[Write to disk] output_directory=[" + temp + "]"
+        mode = (
+            "use_virtual_input_images "
+            + "computation_parameters=[Save computation time (but use more RAM)] "
+            + "image_output=[Write to disk] output_directory=["
+            + temp
+            + "]"
+        )
     else:
-        mode = "computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]"
+        mode = (
+            "computation_parameters=[Save computation time (but use more RAM)] "
+            + "image_output=[Fuse and display]"
+        )
 
-    IJ.run("Grid/Collection stitching", "type=[Positions from file] order=[Defined by TileConfiguration] " +
-    "directory=[" + source + "] " +
-    "layout_file=TileConfiguration.txt" + " fusion_method=[" + fusion_method + "] " +
-    "regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 " +
-    ("" if quick else "compute_overlap subpixel_accuracy ") + str(mode))
+    params = (
+        "type=[Positions from file] order=[Defined by TileConfiguration] "
+        + "directory=["
+        + source
+        + "] "
+        + "layout_file=TileConfiguration.txt"
+        + " fusion_method=["
+        + fusion_method
+        + "] "
+        + "regression_threshold=0.30 "
+        + "max/avg_displacement_threshold=2.50 "
+        + "absolute_displacement_threshold=3.50 "
+        + ("" if quick else "compute_overlap subpixel_accuracy ")
+        + str(mode),
+    )
+
+    print(params)
+
+    IJ.run("Grid/Collection stitching", str(params))
 
 
 def calibrate_current_image(xyz_calibration, unit):
@@ -385,7 +427,10 @@ def save_current_image_as_bdv(filename, filetype, target):
     savepath = target + savename
     IJ.log("now saving: " + str(savepath))
     print("now saving " + savepath)
-    IJ.run("Export Current Image as XML/HDF5", "  use_deflate_compression export_path=["+savepath+"]")
+    IJ.run(
+        "Export Current Image as XML/HDF5",
+        "  use_deflate_compression export_path=[" + savepath + "]",
+    )
     imp.close()
 
     return savepath
@@ -462,7 +507,7 @@ def open_sequential_gcimages_withBF(source, image_dimensions_czt):
     """
 
     c_end = str(image_dimensions_czt[0])
-    c_start = "0" * (len(c_end)- 1) + "1"
+    c_start = "0" * (len(c_end) - 1) + "1"
 
     z_end = str(image_dimensions_czt[1])
     z_start = "0" * (len(z_end) - 1) + "1"
@@ -470,10 +515,29 @@ def open_sequential_gcimages_withBF(source, image_dimensions_czt):
     t_end = str(image_dimensions_czt[2])
     t_start = "0" * (len(t_end) - 1) + "1"
 
-    first_image_path = source + "/img_t"+t_start+"_z"+z_start+"_c"+c_start
-    IJ.run("Bio-Formats Importer", "open=[" + first_image_path + "] color_mode=Default group_files " +
-    "rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT use_virtual_stack " +
-    "name="+source+"/img_t<"+t_start+"-"+t_end+">_z<"+z_start+"-"+z_end+">_c<"+c_start+"-"+c_end+">")
+    first_image_path = source + "/img_t" + t_start + "_z" + z_start + "_c" + c_start
+    IJ.run(
+        "Bio-Formats Importer",
+        "open=["
+        + first_image_path
+        + "] color_mode=Default group_files "
+        + "rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT use_virtual_stack "
+        + "name="
+        + source
+        + "/img_t<"
+        + t_start
+        + "-"
+        + t_end
+        + ">_z<"
+        + z_start
+        + "-"
+        + z_end
+        + ">_c<"
+        + c_start
+        + "-"
+        + c_end
+        + ">",
+    )
 
 
 def open_sequential_gcimages_from_folder(source, image_dimensions_czt):
@@ -493,8 +557,12 @@ def open_sequential_gcimages_from_folder(source, image_dimensions_czt):
 
     imp = FolderOpener.open(str(source), "virtual")
     total_images_in_stack = imp.getNSlices()
-    z_total = total_images_in_stack / (c_end * t_end) # needs to be inferred rather than taken from raw image metadata as the G/C-stitcher might have added z-planes
-    imp2 = HyperStackConverter.toHyperStack(imp, c_end, z_total, t_end, "default", "Color") # xyczt (default), stays virtual
+    z_total = total_images_in_stack / (
+        c_end * t_end
+    )  # needs to be inferred rather than taken from raw image metadata as the G/C-stitcher might have added z-planes
+    imp2 = HyperStackConverter.toHyperStack(
+        imp, c_end, z_total, t_end, "default", "Color"
+    )  # xyczt (default), stays virtual
     imp2.show()
 
 
@@ -546,9 +614,7 @@ def locate_latest_imaris(big_data):
             r"C:\Program Files\Bitplane\Imaris ",
         ]
     else:
-        paths_to_check = [
-            r"C:\Program Files\Bitplane\ImarisConvertBioformats "
-        ]
+        paths_to_check = [r"C:\Program Files\Bitplane\ImarisConvertBioformats "]
 
     imaris_paths = [""]
 
@@ -559,6 +625,7 @@ def locate_latest_imaris(big_data):
         )
 
     return imaris_paths[-1]
+
 
 def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
     """Convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
@@ -585,14 +652,15 @@ def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
         command = '"%s"  -i "%s" -of Imaris5 -o "%s"' % (
             exe_command,
             path_to_image,
-            path_to_image.replace(file_extension,".ims")
+            path_to_image.replace(file_extension, ".ims"),
         )
         print("\n%s" % command)
         IJ.log("Converting to Imaris5 .ims...")
         subprocess.call(command, shell=True)
         IJ.log("Conversion to .ims is finished")
 
-def send_mail( sender, recipient, filename, total_execution_time_min ):
+
+def send_mail(sender, recipient, filename, total_execution_time_min):
     """Send an email via smtp.unibas.ch.
     Will likely NOT work without connection to the unibas network.
 
@@ -608,23 +676,28 @@ def send_mail( sender, recipient, filename, total_execution_time_min ):
         the time it took to process the file
     """
 
-    header  = "From: imcf@unibas.ch\n"
+    header = "From: imcf@unibas.ch\n"
     header += "To: %s\n"
     header += "Subject: Your stitching job finished successfully\n\n"
-    text = "Dear recipient,\n\n"\
-    "This is an automated message from the recursive stitching tool.\n"\
-    "Your folder %s has been successfully processed (%s min).\n\n"\
-    "Kind regards,\n"\
-    "The IMCF-team"
+    text = (
+        "Dear recipient,\n\n"
+        "This is an automated message from the recursive stitching tool.\n"
+        "Your folder %s has been successfully processed (%s min).\n\n"
+        "Kind regards,\n"
+        "The IMCF-team"
+    )
 
     message = header + text
 
     try:
-       smtpObj = smtplib.SMTP("smtp.unibas.ch")
-       smtpObj.sendmail( sender, recipient, message % ( recipient, filename, total_execution_time_min ) )
-       print("Successfully sent email")
+        smtpObj = smtplib.SMTP("smtp.unibas.ch")
+        smtpObj.sendmail(
+            sender, recipient, message % (recipient, filename, total_execution_time_min)
+        )
+        print("Successfully sent email")
     except smtplib.SMTPException:
-       print("Error: unable to send email")
+        print("Error: unable to send email")
+
 
 def sorted_alphanumeric(data):
     """Sort a list alphanumerically
@@ -640,10 +713,11 @@ def sorted_alphanumeric(data):
         Sorted list
     """
     convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
     return sorted(data, key=alphanum_key)
 
-def elapsed_time_since(start,end=None):
+
+def elapsed_time_since(start, end=None):
     """Prints the elapsed time for execution
 
     Parameters
@@ -662,9 +736,9 @@ def elapsed_time_since(start,end=None):
     if not end:
         end = time.time()
 
-    hours, rem = divmod(end-start, 3600)
+    hours, rem = divmod(end - start, 3600)
     minutes, seconds = divmod(rem, 60)
-    return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds)
+    return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds)
 
 
 # ─── Main Code ────────────────────────────────────────────────────────────────
@@ -677,13 +751,15 @@ if not filetype.startswith("."):
 
 # In case script is ran batch
 if os.path.isfile(source.getAbsolutePath()):
-	source = os.path.dirname(source.getAbsolutePath())
-source =  fix_ij_dirs(source)
+    source = os.path.dirname(source.getAbsolutePath())
+source = fix_ij_dirs(source)
 all_source_dirs = list_dirs_containing_filetype(source, filetype)
 
 if only_register:
     fusion_method = "Do not fuse images (only write TileConfiguration)"
-    IJ.log("The output will only be the txt file containing registered positions for the tiles.")
+    IJ.log(
+        "The output will only be the txt file containing registered positions for the tiles."
+    )
     IJ.log("As such, no HDF5 resaving or Imaris conversion will be happening.")
 else:
     fusion_method = "Linear Blending"
@@ -703,9 +779,16 @@ for source_dir in all_source_dirs:
     # if filetype == "ome.tif":
     #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
     # else:
-    write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[4], ome_metadata[5], ome_metadata[6])
+    write_tileconfig(
+        source_dir,
+        ome_metadata[0],
+        allimages,
+        ome_metadata[4],
+        ome_metadata[5],
+        ome_metadata[6],
+    )
     # sys.exit(0)
-    run_GC_stitcher(source_dir, fusion_method, bigdata)
+    run_GC_stitcher(source_dir, fusion_method, bigdata, quick)
 
     if bigdata and not only_register:
         path = source_dir + "temp/"
@@ -713,7 +796,7 @@ for source_dir in all_source_dirs:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
         convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
-        shutil.rmtree(path, ignore_errors = True) # remove temp folder
+        shutil.rmtree(path, ignore_errors=True)  # remove temp folder
 
     if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
@@ -722,7 +805,9 @@ for source_dir in all_source_dirs:
 
     if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_with_BF_as_ics1(allimages[0], filetype, source_dir)
+        path_to_image = save_current_image_with_BF_as_ics1(
+            allimages[0], filetype, source_dir
+        )
         convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
 
     # run the garbage collector to clear the memory
@@ -738,7 +823,7 @@ for source_dir in all_source_dirs:
 total_execution_time_min = elapsed_time_since(execution_start_time)
 
 if email_address != "":
-    send_mail( "imcf@unibas.ch", email_address, source, total_execution_time_min )
+    send_mail("imcf@unibas.ch", email_address, source, total_execution_time_min)
 else:
     print("Email address field is empty, no email was sent")
 
@@ -752,4 +837,4 @@ IJ.log("conserve RAM= " + str(bigdata))
 IJ.log("total time in [HH:MM:SS:ss]: " + str(total_execution_time_min))
 IJ.log("All done")
 IJ.selectWindow("Log")
-IJ.saveAs("Text", os.path.join(source,"stitch_log"))
+IJ.saveAs("Text", os.path.join(source, "stitch_log"))
