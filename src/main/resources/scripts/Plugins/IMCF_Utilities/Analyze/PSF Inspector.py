@@ -1447,7 +1447,7 @@ try:
                         + str(ref_chnl),
                     )
                     set_roi_color_and_position(
-                        shift_xy_text, Color.red, position_frame=1
+                        shift_xy_text, Color.red, position_frame=channel_index + 1
                     )
                     text_overlay.add(shift_xy_text)
 
@@ -1460,7 +1460,7 @@ try:
                         + str(ref_chnl),
                     )
                     set_roi_color_and_position(
-                        shift_z_text, Color.red, position_frame=1
+                        shift_z_text, Color.red, position_frame=channel_index + 1
                     )
                     text_overlay.add(shift_z_text)
 
@@ -1498,12 +1498,12 @@ try:
                 # kv_dict['C' + str(channel) + '_shift_Y'] = str(brightest_spot['Y_coord'] - C1_y_coord)
                 # kv_dict['C' + str(channel) + '_shift_Z'] = str(stack_stats['best_slice'] - C1_z_coord)
 
-                set_roi_color_and_position(date_text, Color.red, position_frame=1)
-                set_roi_color_and_position(channel_text, Color.red, position_frame=1)
-                set_roi_color_and_position(roi_text, Color.red, position_frame=1)
-                set_roi_color_and_position(fwhml_text, Color.red, position_frame=1)
-                set_roi_color_and_position(fwhml_avg_text, Color.red, position_frame=1)
-                set_roi_color_and_position(fwhma_text, Color.red, position_frame=1)
+                set_roi_color_and_position(date_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(channel_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(roi_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(fwhml_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(fwhml_avg_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(fwhma_text, Color.red, position_frame=channel_index + 1)
 
                 text_overlay.add(date_text)
                 text_overlay.add(channel_text)
@@ -1513,7 +1513,6 @@ try:
                 text_overlay.add(fwhma_text)
 
                 # stack_imp.setOverlay(text_overlay)
-
                 concat_array.append(stack_imp)
 
                 kv_dict.add(
@@ -1555,7 +1554,7 @@ try:
             # concat_imp.show()
 
             concat_imp.setOverlay(text_overlay)
-            # concat_imp.flattenStack()
+            concat_imp.flattenStack()
 
             fixed_title = (
                 re.sub(r"\.([^.]*)$", r"", imp.getTitle())
