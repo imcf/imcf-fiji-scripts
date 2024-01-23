@@ -1221,7 +1221,7 @@ try:
                 fwhm_axial_plot.setLimits(-4000, 4000, 0, max_graph * 1.1)
                 fwhm_axial_plot.add("circles", x_plot_ax_real, y_plot_ax_real)
                 fwhm_axial_plot.addLabel(
-                    0, 0, "FWHM axial =" + str(round(FWHMa, 0)) + "nm"
+                    0, 0, "FWHM axial =" + str(FWHMa) + "nm"
                 )
                 fwhm_axial_imp = fwhm_axial_plot.getImagePlus()
                 change_canvas_size(
