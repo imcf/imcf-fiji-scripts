@@ -854,6 +854,8 @@ def change_canvas_size(imp, width, height, position, do_zero=True, resize=False)
     else:
         imp2 = imp
 
+    imp2.setTitle(imp.getTitle())
+    imp.changes = False
     imp.close()
 
     options = (
@@ -1130,7 +1132,7 @@ try:
                 imp_centered_ROI_current_channel_proj.setTitle("Project")
 
                 project_width = ROI_size * 2
-                imp_centered_ROI_current_channel_proj.show()
+                # imp_centered_ROI_current_channel_proj.show()
                 imp_centered_ROI_current_channel_proj = change_canvas_size(
                     imp_centered_ROI_current_channel_proj,
                     project_width,
@@ -1138,11 +1140,6 @@ try:
                     "Top-Left",
                     True,
                 )
-
-                imp_centered_ROI_current_channel.show()
-                imp_centered_ROI_current_channel_proj.show()
-                imp_x_proj.show()
-                imp_y_proj.show()
 
                 imp_y_proj = change_canvas_size(
                     imp_y_proj, project_width, project_width, "Top-Right", True, True
@@ -1152,7 +1149,10 @@ try:
                 )
                 # scale_value = half_final_size / ROI_size
 
-
+                imp_centered_ROI_current_channel.show()
+                imp_centered_ROI_current_channel_proj.show()
+                imp_x_proj.show()
+                imp_y_proj.show()
 
 
                 ic = ImageCalculator()
