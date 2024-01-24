@@ -728,7 +728,7 @@ def reslice_based_on_roi(
     imp.setRoi(line_roi)
     output = (
         str(imp.getCalibration().pixelDepth)
-        + " slice_count=1 avoid"
+        + " slice_count=1"
         + (" rotate" if do_y else "")
     )
     IJ.run(
@@ -834,7 +834,7 @@ def bg_subtraction(imp, slice_number=None, roi=None, stat_to_use="mean"):
     )
 
 
-def change_canvas_size(imp, width, height, position, do_zero=True):
+def change_canvas_size(imp, width, height, position, do_zero=True, resize=False):
     """Change the canvas of an image
 
     Parameters
@@ -849,6 +849,13 @@ def change_canvas_size(imp, width, height, position, do_zero=True):
         Position to put the original image in the new canvas
     """
 
+    if resize:
+        imp2 = rescale_image(imp, width, height)
+    else:
+        imp2 = imp
+
+    imp.close()
+
     options = (
         "width="
         + str(width)
@@ -861,8 +868,31 @@ def change_canvas_size(imp, width, height, position, do_zero=True):
         + (" zero" if do_zero else "")
     )
 
-    IJ.run(imp, "Canvas Size...", options)
+    IJ.run(imp2, "Canvas Size...", options)
+    return imp2
 
+def rescale_image(imp, width, height):
+    """Rescale an image
+
+    Parameters
+    ----------
+    imp : ij.ImagePlus
+        ImagePlus on which to change the canvas
+    width : int
+        New width for the canvas, in pixel
+    height : int
+        New height for the canvas, in pixel
+    """
+
+    imp2 = imp.resize(
+        int(width / 2),
+        int(height / 2),
+        "bilinear"
+    )
+
+    imp2.setTitle(imp.getTitle())
+
+    return imp2
 
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 
@@ -1004,6 +1034,8 @@ try:
                     imp_current_channel, region_roi, stack_stats["best_slice"]
                 )
 
+                max_z = min(imp.getNSlices(), 100)
+
                 if channel == ref_chnl:
                     ref_chnl_x_coord = brightest_spot["X_coord"]
                     ref_chnl_y_coord = brightest_spot["Y_coord"]
@@ -1036,7 +1068,7 @@ try:
 
                 # Redimension stack
                 while (
-                    stack_stats["best_slice"] + 50
+                    stack_stats["best_slice"] + (max_z / 2)
                     > imp_centered_ROI_current_channel.getNSlices()
                 ):
                     imp_centered_ROI_current_channel.setSlice(
@@ -1044,21 +1076,24 @@ try:
                     )
                     IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
                 while (
-                    stack_stats["best_slice"] + 50
+                    stack_stats["best_slice"] + (max_z / 2)
                     < imp_centered_ROI_current_channel.getNSlices()
                 ):
                     imp_centered_ROI_current_channel.setSlice(
                         imp_centered_ROI_current_channel.getNSlices()
                     )
                     IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
-                while imp_centered_ROI_current_channel.getNSlices() > 100:
+                while imp_centered_ROI_current_channel.getNSlices() > max_z:
                     imp_centered_ROI_current_channel.setSlice(1)
                     IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
-                while imp_centered_ROI_current_channel.getNSlices() < 100:
+                while imp_centered_ROI_current_channel.getNSlices() < max_z:
                     imp_centered_ROI_current_channel.setSlice(1)
                     IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
 
-                best_slice = 50
+                best_slice = max_z / 2
+
+                # imp_centered_ROI_current_channel.show()
+                # sys.exit()
 
                 # Projections
                 # X Projection
@@ -1094,22 +1129,31 @@ try:
                 )
                 imp_centered_ROI_current_channel_proj.setTitle("Project")
 
-                project_width = ROI_size + H
+                project_width = ROI_size * 2
                 imp_centered_ROI_current_channel_proj.show()
-                change_canvas_size(
+                imp_centered_ROI_current_channel_proj = change_canvas_size(
                     imp_centered_ROI_current_channel_proj,
                     project_width,
                     project_width,
                     "Top-Left",
                     True,
                 )
-                change_canvas_size(
-                    imp_y_proj, project_width, project_width, "Top-Right", True
+
+                imp_centered_ROI_current_channel.show()
+                imp_centered_ROI_current_channel_proj.show()
+                imp_x_proj.show()
+                imp_y_proj.show()
+
+                imp_y_proj = change_canvas_size(
+                    imp_y_proj, project_width, project_width, "Top-Right", True, True
                 )
-                change_canvas_size(
-                    imp_x_proj, project_width, project_width, "Bottom-Left", True
+                imp_x_proj = change_canvas_size(
+                    imp_x_proj, project_width, project_width, "Bottom-Left", True, True
                 )
                 # scale_value = half_final_size / ROI_size
+
+
+
 
                 ic = ImageCalculator()
                 imp_montage = ic.run(
@@ -1121,7 +1165,7 @@ try:
 
                 new_size = int((project_width * half_final_size) / ROI_size)
                 imp_montage_2 = imp_montage_2.resize(new_size, new_size, "none")
-                change_canvas_size(
+                imp_montage_2 = change_canvas_size(
                     imp_montage_2, final_size, final_size, "Top-Left", False
                 )
 
@@ -1131,6 +1175,8 @@ try:
 
                 imp_montage_2.setTitle("Project")
                 imp_montage_2.show()
+
+                # sys.exit()
 
                 imp_montage.changes = False
                 imp_x_proj.changes = False
@@ -1150,6 +1196,8 @@ try:
                 IJ.run(imp_montage_2, "LUTforPSFs2", "")
                 IJ.run(imp_montage_2, "8-bit", "")
                 IJ.run(imp_montage_2, "RGB Color", "")
+
+
 
                 # ─── FWHM AXIAL ─────────────────────────────────────────────────────────────────
 
@@ -1224,7 +1272,7 @@ try:
                     0, 0, "FWHM axial =" + str(FWHMa) + "nm"
                 )
                 fwhm_axial_imp = fwhm_axial_plot.getImagePlus()
-                change_canvas_size(
+                fwhm_axial_imp = change_canvas_size(
                     fwhm_axial_imp, final_size, final_size, "Center", False
                 )
 
@@ -1380,7 +1428,7 @@ try:
                     + "nm",
                 )
                 fwhm_lateral_imp = fwhm_lateral_plot.getImagePlus()
-                change_canvas_size(
+                fwhm_lateral_imp = change_canvas_size(
                     fwhm_lateral_imp, final_size, final_size, "Center", False
                 )
 
@@ -1552,6 +1600,7 @@ try:
             concat_imp = Concatenator.run(concat_array)
             concat_imp.setTitle(imp.getTitle() + "_maintenance")
             # concat_imp.show()
+            # sys.exit()
 
             concat_imp.setOverlay(text_overlay)
             concat_imp.flattenStack()
