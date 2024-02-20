@@ -11,7 +11,6 @@ import math
 import os
 import re
 import sys
-from collections import OrderedDict
 from datetime import date
 
 import java
@@ -23,7 +22,6 @@ from ij import WindowManager as wm
 from ij.gui import Line, Overlay, Plot, Roi, TextRoi, WaitForUserDialog
 from ij.measure import CurveFitter
 from ij.plugin import (
-    CompositeConverter,
     Concatenator,
     Duplicator,
     ImageCalculator,
@@ -31,14 +29,11 @@ from ij.plugin import (
     ZProjector,
 )
 from ij.plugin.frame import RoiManager
-from jarray import array
 from java.awt import Color, Font
 
 # java imports
 from java.lang import Long, String
-from java.lang.Long import longValue
-from java.lang.reflect import Array
-from java.util import ArrayList, HashMap
+from java.util import ArrayList
 from loci.plugins import BF, LociExporter
 
 from loci.plugins.in import ImporterOptions
@@ -50,26 +45,22 @@ from ome.formats.importer import (
     OMEROWrapper,
 )
 from ome.formats.importer.cli import ErrorHandler, LoggingImportMonitor
-from ome.model.containers import Dataset
-from omero.api import IQueryPrx
-from omero.cmd import Delete2, OriginalMetadataRequest
+from omero.cmd import OriginalMetadataRequest
 
 # Omero Dependencies
 from omero.gateway import Gateway, LoginCredentials, SecurityContext
 from omero.gateway.facility import (
     BrowseFacility,
     DataManagerFacility,
-    MetadataFacility,
     ROIFacility,
 )
 from omero.gateway.model import (
     DatasetData,
-    ExperimenterData,
     MapAnnotationData,
     ProjectData,
 )
-from omero.log import Logger, SimpleLogger
-from omero.model import IObject, NamedValue, Pixels
+from omero.log import SimpleLogger
+from omero.model import NamedValue
 from omero.sys import ParametersI
 from org.openmicroscopy.shoola.util.roi.io import ROIReader
 
@@ -691,7 +682,7 @@ def duplicate_imp_and_calibrate(
 
 
 def reslice_based_on_roi(
-    imp, ROI_size, line_start, bg_ROI, slice_number=None, do_y=False
+    imp, ROI_size, line_start, bg_ROI=None, slice_number=None, do_y=False
 ):
     """Reslice an ImagePlus based on a ROI
 
@@ -742,7 +733,8 @@ def reslice_based_on_roi(
     else:
         imp_proj.setTitle("X_Proj")
 
-    bg_subtraction(imp_proj, None, bg_ROI, "min")
+    if bg_ROI:
+        bg_subtraction(imp_proj, None, bg_ROI, "min")
 
     return imp_proj
 
@@ -873,6 +865,7 @@ def change_canvas_size(imp, width, height, position, do_zero=True, resize=False)
     IJ.run(imp2, "Canvas Size...", options)
     return imp2
 
+
 def rescale_image(imp, width, height):
     """Rescale an image
 
@@ -886,15 +879,12 @@ def rescale_image(imp, width, height):
         New height for the canvas, in pixel
     """
 
-    imp2 = imp.resize(
-        int(width / 2),
-        int(height / 2),
-        "bilinear"
-    )
+    imp2 = imp.resize(int(width / 2), int(height / 2), "bilinear")
 
     imp2.setTitle(imp.getTitle())
 
     return imp2
+
 
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 
@@ -1154,7 +1144,6 @@ try:
                 imp_x_proj.show()
                 imp_y_proj.show()
 
-
                 ic = ImageCalculator()
                 imp_montage = ic.run(
                     "Add create", imp_centered_ROI_current_channel_proj, imp_x_proj
@@ -1196,8 +1185,6 @@ try:
                 IJ.run(imp_montage_2, "LUTforPSFs2", "")
                 IJ.run(imp_montage_2, "8-bit", "")
                 IJ.run(imp_montage_2, "RGB Color", "")
-
-
 
                 # ─── FWHM AXIAL ─────────────────────────────────────────────────────────────────
 
@@ -1268,9 +1255,7 @@ try:
                 )
                 fwhm_axial_plot.setLimits(-4000, 4000, 0, max_graph * 1.1)
                 fwhm_axial_plot.add("circles", x_plot_ax_real, y_plot_ax_real)
-                fwhm_axial_plot.addLabel(
-                    0, 0, "FWHM axial =" + str(FWHMa) + "nm"
-                )
+                fwhm_axial_plot.addLabel(0, 0, "FWHM axial =" + str(FWHMa) + "nm")
                 fwhm_axial_imp = fwhm_axial_plot.getImagePlus()
                 fwhm_axial_imp = change_canvas_size(
                     fwhm_axial_imp, final_size, final_size, "Center", False
@@ -1546,12 +1531,24 @@ try:
                 # kv_dict['C' + str(channel) + '_shift_Y'] = str(brightest_spot['Y_coord'] - C1_y_coord)
                 # kv_dict['C' + str(channel) + '_shift_Z'] = str(stack_stats['best_slice'] - C1_z_coord)
 
-                set_roi_color_and_position(date_text, Color.red, position_frame=channel_index + 1)
-                set_roi_color_and_position(channel_text, Color.red, position_frame=channel_index + 1)
-                set_roi_color_and_position(roi_text, Color.red, position_frame=channel_index + 1)
-                set_roi_color_and_position(fwhml_text, Color.red, position_frame=channel_index + 1)
-                set_roi_color_and_position(fwhml_avg_text, Color.red, position_frame=channel_index + 1)
-                set_roi_color_and_position(fwhma_text, Color.red, position_frame=channel_index + 1)
+                set_roi_color_and_position(
+                    date_text, Color.red, position_frame=channel_index + 1
+                )
+                set_roi_color_and_position(
+                    channel_text, Color.red, position_frame=channel_index + 1
+                )
+                set_roi_color_and_position(
+                    roi_text, Color.red, position_frame=channel_index + 1
+                )
+                set_roi_color_and_position(
+                    fwhml_text, Color.red, position_frame=channel_index + 1
+                )
+                set_roi_color_and_position(
+                    fwhml_avg_text, Color.red, position_frame=channel_index + 1
+                )
+                set_roi_color_and_position(
+                    fwhma_text, Color.red, position_frame=channel_index + 1
+                )
 
                 text_overlay.add(date_text)
                 text_overlay.add(channel_text)
