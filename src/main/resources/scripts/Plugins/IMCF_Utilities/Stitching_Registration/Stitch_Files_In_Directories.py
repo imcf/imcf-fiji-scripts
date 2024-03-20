@@ -15,25 +15,22 @@
 
 # ─── Imports ──────────────────────────────────────────────────────────────────
 
-# python imports
-import os
-import shutil
 import glob
-import time
-import subprocess
+import os
 import re
-
+import shutil
 import smtplib
-
-# ome imports to parse metadata
-from loci.formats import ImageReader
-from loci.formats import MetadataTools
+import subprocess
+import time
+from io.scif.util import MemoryTools
 
 # Imagej imports
 from ij import IJ
 from ij import WindowManager as wm
-from io.scif.util import MemoryTools
 from ij.plugin import FolderOpener, HyperStackConverter
+
+# ome imports to parse metadata
+from loci.formats import ImageReader, MetadataTools
 
 # requirements:
 # BigStitcher
@@ -116,6 +113,28 @@ def list_all_filenames(source, filetype):
     return allimages
 
 
+def list_all_series(source, filetype):
+    """Get a sorted list of all series of specified filetype in a given directory
+
+    Parameters
+    ----------
+    source : str
+        Path to source dir
+    filetype : str
+        File extension to specify filetype
+
+    Returns
+    -------
+    list
+        List of all series of the given type in the source dir
+    """
+
+    os.chdir(str(source))
+    allseries = sorted_alphanumeric(glob.glob("*" + filetype))  # sorted by name
+
+    return allseries
+
+
 def get_ome_metadata(source, imagenames):
     """Get the stage coordinates and calibration from the ome-xml for a given list of images
 
@@ -150,19 +169,24 @@ def get_ome_metadata(source, imagenames):
             Image calibration unit
         image_dimensions_czt : list
             Number of images in dimensions c,z,t
+        series_naes : list(str)
+            Names of all series contained in the files
     """
 
     # open an array to store the abosolute stage coordinates from metadata
     stage_coordinates_x = []
     stage_coordinates_y = []
     stage_coordinates_z = []
+    series_names = []
 
     for counter, image in enumerate(imagenames):
         # parse metadata
         reader = ImageReader()
+        reader.setFlattenedResolutions(False)
         omeMeta = MetadataTools.createOMEXMLMetadata()
         reader.setMetadataStore(omeMeta)
         reader.setId(source + str(image))
+        series_count = reader.getSeriesCount()
 
         # get hyperstack dimensions from the first image
         if counter == 0:
@@ -173,10 +197,10 @@ def get_ome_metadata(source, imagenames):
             frame_size_t = reader.getSizeT()
 
             # note the dimensions
-            if frame_size_z == 1:
-                dimensions = 2
-            if frame_size_z > 1:
-                dimensions = 3
+            # if frame_size_z == 1:
+            #     dimensions = 2
+            # if frame_size_z > 1:
+            dimensions = 3
 
             # get the physical calibration for the first image series
             physSizeX = omeMeta.getPixelsPhysicalSizeX(0)
@@ -203,24 +227,48 @@ def get_ome_metadata(source, imagenames):
 
         reader.close()
 
-        # get the plane position in calibrated units
-        current_position_x = omeMeta.getPlanePositionX(0, 0)
-        current_position_y = omeMeta.getPlanePositionY(0, 0)
-        current_position_z = omeMeta.getPlanePositionZ(0, 0)
+        for series in range(series_count):
 
-        # get the absolute stage positions and store them
-        pos_x = current_position_x.value()
-        pos_y = current_position_y.value()
+            if series_count > 0:
+                series_names.append(omeMeta.getImageName(series))
+            else:
+                series_names.append(str(image))
+            # get the plane position in calibrated units
+            current_position_x = omeMeta.getPlanePositionX(series, 0)
+            current_position_y = omeMeta.getPlanePositionY(series, 0)
+            current_position_z = omeMeta.getPlanePositionZ(series, 0)
 
-        if current_position_z is None:
-            print("the z-position is missing in the ome-xml metadata.")
-            pos_z = 1.0
-        else:
-            pos_z = current_position_z.value()
+            physSizeX_max = (
+                physSizeX
+                if physSizeX >= omeMeta.getPixelsPhysicalSizeX(series)
+                else omeMeta.getPixelsPhysicalSizeX(series)
+            )
+            physSizeY_max = (
+                physSizeY
+                if physSizeY >= omeMeta.getPixelsPhysicalSizeY(series)
+                else omeMeta.getPixelsPhysicalSizeY(series)
+            )
+            physSizeZ_max = (
+                physSizeZ
+                if physSizeZ >= omeMeta.getPixelsPhysicalSizeZ(series)
+                else omeMeta.getPixelsPhysicalSizeZ(series)
+            )
 
-        stage_coordinates_x.append(pos_x)
-        stage_coordinates_y.append(pos_y)
-        stage_coordinates_z.append(pos_z)
+            # get the absolute stage positions and store them
+            pos_x = current_position_x.value()
+            pos_y = current_position_y.value()
+
+            if current_position_z is None:
+                print("the z-position is missing in the ome-xml metadata.")
+                pos_z = 1.0
+            else:
+                pos_z = current_position_z.value()
+
+            stage_coordinates_x.append(pos_x)
+            stage_coordinates_y.append(pos_y)
+            stage_coordinates_z.append(pos_z)
+
+    max_size = [physSizeX_max, physSizeY_max, physSizeZ_max]
 
     # calculate the store the relative stage movements in px (for the grid/collection stitcher)
     relative_coordinates_x_px = []
@@ -251,6 +299,8 @@ def get_ome_metadata(source, imagenames):
         image_calibration,
         calibration_unit,
         image_dimensions_czt,
+        series_names,
+        max_size,
     )
 
 
@@ -520,8 +570,9 @@ def open_sequential_gcimages_withBF(source, image_dimensions_czt):
         "Bio-Formats Importer",
         "open=["
         + first_image_path
-        + "] color_mode=Default group_files "
-        + "rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT use_virtual_stack "
+        + "] color_mode=Default concatenate_series open_all_series "
+        + "rois_import=[ROI manager] view=Hyperstack "
+        + "stack_order=XYCZT use_virtual_stack "
         + "name="
         + source
         + "/img_t<"
@@ -782,11 +833,14 @@ for source_dir in all_source_dirs:
     write_tileconfig(
         source_dir,
         ome_metadata[0],
-        allimages,
+        ome_metadata[10],
         ome_metadata[4],
         ome_metadata[5],
         ome_metadata[6],
     )
+
+    sys.exit(0)
+
     # sys.exit(0)
     run_GC_stitcher(source_dir, fusion_method, bigdata, quick)
 
