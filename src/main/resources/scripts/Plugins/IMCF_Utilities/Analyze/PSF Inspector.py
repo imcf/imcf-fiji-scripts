@@ -13,9 +13,8 @@ import re
 import sys
 from datetime import date
 
-import java
+from collections import OrderedDict
 
-# Bioformats imports
 import loci.common
 from ij import IJ
 from ij import WindowManager as wm
@@ -32,7 +31,7 @@ from ij.plugin.frame import RoiManager
 from java.awt import Color, Font
 
 # java imports
-from java.lang import Long, String
+from java.lang import Double, Long, String
 from java.util import ArrayList
 from loci.plugins import BF, LociExporter
 
@@ -53,11 +52,15 @@ from omero.gateway.facility import (
     BrowseFacility,
     DataManagerFacility,
     ROIFacility,
+    TablesFacility,
 )
 from omero.gateway.model import (
     DatasetData,
+    ImageData,
     MapAnnotationData,
     ProjectData,
+    TableData,
+    TableDataColumn,
 )
 from omero.log import SimpleLogger
 from omero.model import NamedValue
@@ -333,10 +336,10 @@ def upload_image_to_omero(path, gateway, dataset_id):
     errorHandler = ErrorHandler(config)
 
     library.addObserver(LoggingImportMonitor())
-    str2d = java.lang.reflect.Array.newInstance(java.lang.String, [1])
-    str2d[0] = path
+    # str2d = java.lang.reflect.Array.newInstance(java.lang.String, [1])
+    # str2d[0] = path
 
-    candidates = ImportCandidates(reader, str2d, errorHandler)
+    candidates = ImportCandidates(reader, [path], errorHandler)
     reader.setMetadataOptions(DefaultMetadataOptions(MetadataLevel.ALL))
     # IJ.log("uploading to OMERO...")
     return library.importCandidates(config, candidates)
@@ -393,7 +396,7 @@ def get_dataset_ids(gateway, image_id):
         "select l.parent from DatasetImageLink as l where l.child.id = :id", p
     )
     ds = DatasetData(obj[0])
-    return ds.getId(), ds.NAME
+    return ds.getId(), ds.NAME, ds
 
     # for multiple images :
     # # image_ids = list(map(Long, image_ids))
@@ -779,7 +782,7 @@ def extract(list, index):
     return [item[index] for item in list]
 
 
-def mean_from_list(list, round_decimals=0):
+def mean_from_list(values_list, round_decimals=0):
     """Calculate the mean from a list
 
     Parameters
@@ -794,7 +797,8 @@ def mean_from_list(list, round_decimals=0):
     float
         Mean value of the list
     """
-    return round(float(sum(list)) / len(list), round_decimals)
+    filtered_list = filter(None, values_list)
+    return round(float(sum(filtered_list)) / len(filtered_list), round_decimals)
 
 
 def bg_subtraction(imp, slice_number=None, roi=None, stat_to_use="mean"):
@@ -886,6 +890,55 @@ def rescale_image(imp, width, height):
     return imp2
 
 
+def upload_array_as_omero_table(ctx, gateway, data, columns, image_id):
+    """Upload a table to OMERO plus from a list of lists
+
+    Parameters
+    ----------
+    ctx : omero.gateway.SecurityContext
+        Secure connection to omero.gateway
+    rows : list(list())
+        List of lists of results to upload
+    columns : list(str)
+        List of columns names
+    image_id : int
+        ID of the image that gave the results
+    """
+    _, _, dataset_data = get_dataset_ids(gateway, image_id)
+
+    table_data = TableData(columns, data)
+    print(table_data)
+    table_facility = gateway.getFacility(TablesFacility)
+
+    table_facility.addTable(ctx, dataset_data, "PSF Inspector", table_data)
+
+
+def create_table_columns(headings):
+    """Create the table headings from the ImageJ results table
+
+    Parameters
+    ----------
+    headings : list(str)
+        List of columns names
+
+    Returns
+    -------
+    list(omero.gateway.model.TableDataColumn)
+        List of columns formatted to be uploaded to OMERO
+    """
+    table_columns = []
+    # populate the headings
+    for h in range(len(headings)):
+        heading = headings.keys()[h]
+        type = headings.values()[h]
+        # OMERO.tables queries don't handle whitespace well
+        heading = heading.replace(" ", "_")
+        # title_heading = ["Slice", "Label"]
+        table_columns.append(TableDataColumn(heading, h, type))
+    # table_columns.append(TableDataColumn("Image", size, ImageData))
+    return table_columns
+
+
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 
 # OMERO server info
@@ -905,763 +958,889 @@ final_size = 550
 half_final_size = final_size / 2
 
 # ─── CODE ───────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    IJ.log("\\Clear")
+    IJ.log("Script started")
 
-IJ.log("\\Clear")
-IJ.log("Script started")
+    today = date.today()
+    destination = str(destination)
+    rm.reset()
 
-today = date.today()
-destination = str(destination)
-rm.reset()
-
-try:
-    gateway = omero_connect()
-    exp = gateway.getLoggedInUser()
-    group_id = exp.getGroupId()
-    ctx = SecurityContext(group_id)
-    exp_id = exp.getId()
-    browse = gateway.getFacility(BrowseFacility)
-
-    if OMERO_link:
-        image_ids_array = parse_url(OMERO_link)
-        image_ids_array.sort()
-    else:
-        image_ids_array = []
-        image_ids_array.append(wm.getCurrentImage())
-
-    # imps = BFImport(file_to_open)
-    for image_index, image_id in enumerate(image_ids_array):
-        kv_dict = ArrayList()
-        kv_dict.clear()
-
-        progress_bar(image_index + 1, len(image_ids_array), 2, "Processing : ")
-
-        rm = RoiManager.getInstance()
-        rm.reset()
+    try:
+        gateway = omero_connect()
+        exp = gateway.getLoggedInUser()
+        group_id = exp.getGroupId()
+        ctx = SecurityContext(group_id)
+        exp_id = exp.getId()
+        browse = gateway.getFacility(BrowseFacility)
 
         if OMERO_link:
-            image_obj = browse.getImage(ctx, Long(image_id))
-
-            dataset_id, dataset_name = get_dataset_ids(gateway, image_id)
-            project_name = get_project_name(gateway, dataset_id)
-
-            (
-                obj_mag,
-                obj_na,
-                acq_date,
-                acq_date_number,
-            ) = get_acquisition_metadata_from_imageid(ctx, gateway, image_id)
-
-            IJ.log("\\Update5:Fetching image from OMERO...")
-            openImagePlus(HOST, USERNAME, PASSWORD, groupId, image_id)
-            imp = IJ.getImage()
+            image_ids_array = parse_url(OMERO_link)
+            image_ids_array.sort()
         else:
-            imp = image_ids_array[0]
+            image_ids_array = []
+            image_ids_array.append(wm.getCurrentImage())
 
-        # Set calibration in nm
-        cal = imp.getCalibration()
-        unit_list = ["uM", "micron", "microns", "µm"]
-        unit_list = [i.decode("utf-8") for i in unit_list]
-        if cal.getUnit() in unit_list:
-            xy_voxel = cal.pixelWidth * 1000
-            cal.pixelWidth = xy_voxel
-            cal.pixelHeight = xy_voxel
-            z_voxel = cal.pixelDepth * 1000
-            cal.pixelDepth = z_voxel
-            cal.setUnit("nm")
-            imp.repaintWindow()
-        if cal.getUnit() in "nm":
-            xy_voxel = cal.pixelWidth
-            z_voxel = cal.pixelDepth
+        omero_avg_table = []
+        omero_avg_columns = OrderedDict()
 
-        # Awaiting ROI or quits after 5 tries
-        count = 0
+        # imps = BFImport(file_to_open)
+        for image_index, image_id in enumerate(image_ids_array):
+            kv_dict = ArrayList()
+            kv_dict.clear()
 
-        omero_roi = True
-        while (imp.getRoi() is None) and (rm.getCount() == 0):
-            omero_roi = False
-            WaitForUserDialog("Draw the region of interest and press OK").show()
-            if count == 5:
-                sys.exit("Too many clicks without ROI")
-            else:
-                count = count + 1
+            average_values = []
 
-        if rm.getCount() == 0:
+            progress_bar(image_index + 1, len(image_ids_array), 2, "Processing : ")
+
+            rm = RoiManager.getInstance()
             rm.reset()
-            region_roi = imp.getRoi()
-            rm.addRoi(region_roi)
-
-        avg_FWHM_X = [[] for _ in range(imp.getNChannels())]
-        avg_FWHM_Y = [[] for _ in range(imp.getNChannels())]
-        avg_FWHM_Z = [[] for _ in range(imp.getNChannels())]
-
-        for region_index, region_roi in enumerate(rm.getRoisAsArray()):
-            progress_bar(region_index + 1, rm.getCount(), 3, "Processing ROI : ")
-
-            concat_array = []
-
-            if region_index == 0:
-                channel_order = range(1, imp.getNChannels() + 1)
-                channel_order.insert(0, channel_order.pop(ref_chnl - 1))
-
-            for channel_index, channel in enumerate(channel_order):
-                progress_bar(
-                    channel_index + 1, imp.getNChannels(), 4, "Processing channel : "
-                )
-
-                # if region_index == 0:
-                #     avg_FWHM_X.append([])
-                #     avg_FWHM_Y.append([])
-                #     avg_FWHM_Z.append([])
-
-                # Find brightest spot
-                IJ.run(imp, "Select None", "")
-
-                imp_current_channel = duplicate_imp_and_calibrate(
-                    imp, specific_chnl=channel
-                )
-
-                stack_stats = scan_for_best_slice(imp_current_channel, region_roi)
-
-                brightest_spot = coord_brightest_point(
-                    imp_current_channel, region_roi, stack_stats["best_slice"]
-                )
-
-                max_z = min(imp.getNSlices(), 100)
-
-                if channel == ref_chnl:
-                    ref_chnl_x_coord = brightest_spot["X_coord"]
-                    ref_chnl_y_coord = brightest_spot["Y_coord"]
-                    ref_chnl_z_coord = stack_stats["best_slice"]
-
-                ROI_size = round(roi_size_cal / xy_voxel)
-                # ROI_size = region_roi.getBounds().width
-                half_ROI_size = round(ROI_size / 2)
-
-                centered_ROI = Roi(
-                    brightest_spot["X_coord"] - half_ROI_size,
-                    brightest_spot["Y_coord"] - half_ROI_size,
-                    ROI_size,
-                    ROI_size,
-                )
-                imp_centered_ROI_current_channel = duplicate_imp_and_calibrate(
-                    imp_current_channel, specific_chnl=1, roi=centered_ROI
-                )
-
-                ROI_size_bg = round(ROI_size / 10)
-                bg_ROI = Roi(ROI_size_bg, ROI_size_bg, ROI_size_bg, ROI_size_bg)
-
-                bg_subtraction(
-                    imp_centered_ROI_current_channel, stack_stats["best_slice"], bg_ROI
-                )
-                imp_centered_ROI_current_channel.show()
-
-                x2 = int(min(brightest_spot["X_coord"], half_ROI_size))
-                y2 = int(min(brightest_spot["Y_coord"], half_ROI_size))
-
-                # Redimension stack
-                while (
-                    stack_stats["best_slice"] + (max_z / 2)
-                    > imp_centered_ROI_current_channel.getNSlices()
-                ):
-                    imp_centered_ROI_current_channel.setSlice(
-                        imp_centered_ROI_current_channel.getNSlices()
-                    )
-                    IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
-                while (
-                    stack_stats["best_slice"] + (max_z / 2)
-                    < imp_centered_ROI_current_channel.getNSlices()
-                ):
-                    imp_centered_ROI_current_channel.setSlice(
-                        imp_centered_ROI_current_channel.getNSlices()
-                    )
-                    IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
-                while imp_centered_ROI_current_channel.getNSlices() > max_z:
-                    imp_centered_ROI_current_channel.setSlice(1)
-                    IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
-                while imp_centered_ROI_current_channel.getNSlices() < max_z:
-                    imp_centered_ROI_current_channel.setSlice(1)
-                    IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
-
-                best_slice = max_z / 2
-
-                # imp_centered_ROI_current_channel.show()
-                # sys.exit()
-
-                # Projections
-                # X Projection
-                imp_x_proj = reslice_based_on_roi(
-                    imp_centered_ROI_current_channel,
-                    ROI_size,
-                    y2,
-                    bg_ROI,
-                    best_slice,
-                    False,
-                )
-                H = imp_x_proj.getHeight()
-
-                # Y Projection
-                # IJ.selectWindow(imp_centered_ROI_current_channel.getTitle())
-                IJ.run(imp_centered_ROI_current_channel, "Select None", "")
-                imp_centered_ROI_current_channel.setSlice(best_slice)
-                imp_y_proj = reslice_based_on_roi(
-                    imp_centered_ROI_current_channel,
-                    ROI_size,
-                    x2,
-                    bg_ROI,
-                    best_slice,
-                    True,
-                )
-
-                imp_centered_ROI_current_channel_proj = ZProjector.run(
-                    imp_centered_ROI_current_channel, "max", 1, 100
-                )
-
-                bg_subtraction(
-                    imp_centered_ROI_current_channel_proj, roi=bg_ROI, stat_to_use="min"
-                )
-                imp_centered_ROI_current_channel_proj.setTitle("Project")
-
-                project_width = ROI_size * 2
-                # imp_centered_ROI_current_channel_proj.show()
-                imp_centered_ROI_current_channel_proj = change_canvas_size(
-                    imp_centered_ROI_current_channel_proj,
-                    project_width,
-                    project_width,
-                    "Top-Left",
-                    True,
-                )
-
-                imp_y_proj = change_canvas_size(
-                    imp_y_proj, project_width, project_width, "Top-Right", True, True
-                )
-                imp_x_proj = change_canvas_size(
-                    imp_x_proj, project_width, project_width, "Bottom-Left", True, True
-                )
-                # scale_value = half_final_size / ROI_size
-
-                imp_centered_ROI_current_channel.show()
-                imp_centered_ROI_current_channel_proj.show()
-                imp_x_proj.show()
-                imp_y_proj.show()
-
-                ic = ImageCalculator()
-                imp_montage = ic.run(
-                    "Add create", imp_centered_ROI_current_channel_proj, imp_x_proj
-                )
-                imp_montage.show()
-
-                imp_montage_2 = ic.run("Add create", imp_montage, imp_y_proj)
-
-                new_size = int((project_width * half_final_size) / ROI_size)
-                imp_montage_2 = imp_montage_2.resize(new_size, new_size, "none")
-                imp_montage_2 = change_canvas_size(
-                    imp_montage_2, final_size, final_size, "Top-Left", False
-                )
-
-                # imp_montage2 = imp_montage_2.resize(final_size, final_size, "none")
-
-                text_position_start = half_final_size
-
-                imp_montage_2.setTitle("Project")
-                imp_montage_2.show()
-
-                # sys.exit()
-
-                imp_montage.changes = False
-                imp_x_proj.changes = False
-                imp_y_proj.changes = False
-                imp_centered_ROI_current_channel_proj.changes = False
-                imp_montage.close()
-                imp_x_proj.close()
-                imp_y_proj.close()
-                imp_centered_ROI_current_channel_proj.close()
-
-                IJ.run(imp_montage_2, "32-bit", "")
-                IJ.run(imp_montage_2, "Square Root", "")
-                proj_stats = imp_montage_2.getStatistics()
-                imp_montage_2.setDisplayRange(proj_stats.mean, proj_stats.max)
-                imp_montage_2.getProcessor().invert()
-                imp_montage_2.updateAndDraw()
-                IJ.run(imp_montage_2, "LUTforPSFs2", "")
-                IJ.run(imp_montage_2, "8-bit", "")
-                IJ.run(imp_montage_2, "RGB Color", "")
-
-                # ─── FWHM AXIAL ─────────────────────────────────────────────────────────────────
-
-                z_profile_x = range(imp_centered_ROI_current_channel.getNSlices())
-                z_profile_y = []
-                for i in z_profile_x:
-                    imp_centered_ROI_current_channel.setSlice(i + 1)
-                    z_profile_y.append(
-                        imp_centered_ROI_current_channel.getPixel(x2, y2)[0]
-                    )
-
-                curve_fitter_axial = CurveFitter(z_profile_x, z_profile_y)
-                curve_fitter_axial.doFit(CurveFitter.GAUSSIAN)
-                fit_results = curve_fitter_axial.getParams()
-                rounded_fit_results = [round(num, 4) for num in fit_results]
-
-                # ─── PLOT ───────────────────────────────────────────────────────────────────────
-
-                amplitude = 40
-                max_graph = 0
-                x_plot_ax_real = []
-                y_plot_ax_real = []
-                for i in range(amplitude):
-                    x_plot_ax_real.append((i - amplitude / 2) * z_voxel)
-                    y_plot_ax_real.append(z_profile_y[best_slice - amplitude / 2 + i])
-                    if y_plot_ax_real[i] >= max_graph:
-                        max_graph = y_plot_ax_real[i]
-
-                y_min = 66000
-                y_max = 0
-                x_plot_ax_fit = []
-                y_plot_ax_fit = []
-                for i in range(amplitude * 4):
-                    x_plot_ax_fit.append((i / 4.0 - amplitude / 2.0) * z_voxel)
-                    x = best_slice - amplitude / 2.0 + i / 4.0
-                    y_plot_ax_fit.append(
-                        fit_results[0]
-                        + (fit_results[1] - fit_results[0])
-                        * math.exp(
-                            (-(x - fit_results[2]) * (x - fit_results[2]))
-                            / (2 * fit_results[3] * fit_results[3])
-                        )
-                    )
-
-                    if y_plot_ax_fit[i] >= max_graph:
-                        max_graph = y_plot_ax_fit[i]
-                    if y_min > y_plot_ax_fit[i]:
-                        y_min = y_plot_ax_fit[i]
-                    if y_max < y_plot_ax_fit[i]:
-                        y_max = y_plot_ax_fit[i]
-
-                HM = (y_max - y_min) / 2
-                k = (
-                    -2
-                    * fit_results[3]
-                    * fit_results[3]
-                    * math.log(
-                        (HM - fit_results[0]) / (fit_results[1] - fit_results[0])
-                    )
-                )
-                try:
-                    FWHMa = 2 * z_voxel * math.sqrt(k)
-                except ValueError:
-                    FWHMa = 0
-
-                fwhm_axial_plot = Plot(
-                    "FWHM axial", "Z", "Intensity", x_plot_ax_fit, y_plot_ax_fit
-                )
-                fwhm_axial_plot.setLimits(-4000, 4000, 0, max_graph * 1.1)
-                fwhm_axial_plot.add("circles", x_plot_ax_real, y_plot_ax_real)
-                fwhm_axial_plot.addLabel(0, 0, "FWHM axial =" + str(FWHMa) + "nm")
-                fwhm_axial_imp = fwhm_axial_plot.getImagePlus()
-                fwhm_axial_imp = change_canvas_size(
-                    fwhm_axial_imp, final_size, final_size, "Center", False
-                )
-
-                # fwhm_axial_imp.show()
-                # ─── FWHM LATERAL ───────────────────────────────────────────────────────────────
-
-                imp_centered_ROI_current_channel.setSlice(best_slice)
-                x = range(-8, 9)
-                y = []
-                yy = []
-
-                for i in range(17):
-                    temp_y = 0
-                    temp_yy = 0
-
-                    for k in range(
-                        int(-(math.floor(line_thickness / 2))),
-                        int(-(math.floor(line_thickness / 2)) + line_thickness),
-                    ):
-                        temp_y = (
-                            temp_y
-                            + imp_centered_ROI_current_channel.getPixel(
-                                x2 - 8 + i, y2 + k
-                            )[0]
-                            / line_thickness
-                        )
-                        temp_yy = (
-                            temp_yy
-                            + imp_centered_ROI_current_channel.getPixel(
-                                x2 + k, y2 - 8 + i
-                            )[0]
-                            / line_thickness
-                        )
-
-                    y.append(temp_y)
-                    yy.append(temp_yy)
-
-                curve_fitter_lateral_1 = CurveFitter(x, y)
-                curve_fitter_lateral_1.doFit(CurveFitter.GAUSSIAN)
-                fit_results_lateral_1 = curve_fitter_lateral_1.getParams()
-
-                curve_fitter_lateral_2 = CurveFitter(x, yy)
-                curve_fitter_lateral_2.doFit(CurveFitter.GAUSSIAN)
-                fit_results_lateral_2 = curve_fitter_lateral_2.getParams()
-
-                # ─── PLOT ───────────────────────────────────────────────────────────────────────
-
-                x_plot_lat_real = []
-                y_plot_lat_real = []
-                yy_plot_lat_real = []
-
-                y_min = 66000
-                y_max = 0
-                max_graph = 0
-                for i in range(17):
-                    x_plot_lat_real.append((i - 8) * xy_voxel)
-                    y_plot_lat_real.append(y[i])
-                    yy_plot_lat_real.append(yy[i])
-
-                    if max(y[i], yy[i]) >= max_graph:
-                        max_graph = max(y[i], yy[i])
-
-                x_plot_lat_fit = []
-                y_plot_lat_fit = []
-                yy_plot_lat_fit = []
-
-                for i in range(65):
-                    x = i / 4.0 - 8.0
-                    x_plot_lat_fit.append(x * xy_voxel)
-                    y_plot_lat_fit.append(
-                        fit_results_lateral_1[0]
-                        + (fit_results_lateral_1[1] - fit_results_lateral_1[0])
-                        * math.exp(
-                            (
-                                -(x - fit_results_lateral_1[2])
-                                * (x - fit_results_lateral_1[2])
-                            )
-                            / (2 * fit_results_lateral_1[3] * fit_results_lateral_1[3])
-                        )
-                    )
-                    yy_plot_lat_fit.append(
-                        fit_results_lateral_2[0]
-                        + (fit_results_lateral_2[1] - fit_results_lateral_2[0])
-                        * math.exp(
-                            (
-                                -(x - fit_results_lateral_2[2])
-                                * (x - fit_results_lateral_2[2])
-                            )
-                            / (2 * fit_results_lateral_2[3] * fit_results_lateral_2[3])
-                        )
-                    )
-
-                    if max(y_plot_lat_fit[i], yy_plot_lat_fit[i]) >= max_graph:
-                        max_graph = max(y_plot_lat_fit[i], yy_plot_lat_fit[i])
-                    if y_min > min(y_plot_lat_fit[i], yy_plot_lat_fit[i]):
-                        y_min = min(y_plot_lat_fit[i], yy_plot_lat_fit[i])
-                    if y_max < max(y_plot_lat_fit[i], yy_plot_lat_fit[i]):
-                        y_max = max(y_plot_lat_fit[i], yy_plot_lat_fit[i])
-
-                HM = (y_max - y_min) / 2
-                k = (
-                    -2
-                    * fit_results_lateral_1[3]
-                    * fit_results_lateral_1[3]
-                    * math.log(
-                        (HM - fit_results_lateral_1[0])
-                        / (fit_results_lateral_1[1] - fit_results_lateral_1[0])
-                    )
-                )
-                try:
-                    FWHMl = 2 * xy_voxel * math.sqrt(k)
-                except ValueError:
-                    FWHMl = 0
-
-                ky = (
-                    -2
-                    * fit_results_lateral_2[3]
-                    * fit_results_lateral_2[3]
-                    * math.log(
-                        (HM - fit_results_lateral_2[0])
-                        / (fit_results_lateral_2[1] - fit_results_lateral_2[0])
-                    )
-                )
-                try:
-                    FWHMly = 2 * xy_voxel * math.sqrt(ky)
-                except ValueError:
-                    FWHMly = 0
-
-                fwhm_lateral_plot = Plot(
-                    "FWHM lateral",
-                    "X (black) or Y (blue)",
-                    "Intensity",
-                    x_plot_lat_fit,
-                    y_plot_lat_fit,
-                )
-                fwhm_lateral_plot.setLimits(
-                    -8 * xy_voxel, 8 * xy_voxel, 0, max_graph * 1.1
-                )
-                fwhm_lateral_plot.setColor("blue")
-                fwhm_lateral_plot.add("line", x_plot_lat_fit, yy_plot_lat_fit)
-                fwhm_lateral_plot.add("circles", x_plot_lat_real, yy_plot_lat_real)
-                fwhm_lateral_plot.setColor("black")
-                fwhm_lateral_plot.add("circles", x_plot_lat_real, y_plot_lat_real)
-                fwhm_lateral_plot.addLabel(
-                    0,
-                    0,
-                    "FWHM lateral X ="
-                    + str(round(FWHMl, 0))
-                    + "nm; FWHM lateral Y ="
-                    + str(round(FWHMly, 0))
-                    + "nm; Average ="
-                    + str(round((FWHMl + FWHMly) / 2))
-                    + "nm",
-                )
-                fwhm_lateral_imp = fwhm_lateral_plot.getImagePlus()
-                fwhm_lateral_imp = change_canvas_size(
-                    fwhm_lateral_imp, final_size, final_size, "Center", False
-                )
-
-                imp_centered_ROI_current_channel.changes = False
-                imp_centered_ROI_current_channel.close()
-
-                stack_imp = ImagesToStack().run(
-                    [imp_montage_2, fwhm_axial_imp, fwhm_lateral_imp]
-                )
-
-                # stack_imp.show()
-
-                # stack_position = 1 + ((channel-1) * 3)
-                stack_position = channel
-
-                if channel == ref_chnl:
-                    text_overlay = Overlay()
-                text_font = Font("Arial", Font.PLAIN, 14)
-                date_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 20,
-                    str(today),
-                    text_font,
-                )
-                channel_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 40,
-                    "Channel               = " + str(channel),
-                    text_font,
-                )
-                roi_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 60,
-                    "ROI                   = " + str(region_roi.getName()),
-                )
-                fwhml_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 80,
-                    "FWHM lateral          : X = "
-                    + str(int(FWHMl))
-                    + "nm;  Y = "
-                    + str(int(FWHMly))
-                    + "nm",
-                )
-                fwhml_avg_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 100,
-                    "FWHM lateral average = " + str(int((FWHMl + FWHMly) / 2)) + "nm",
-                )
-                fwhma_text = TextRoi(
-                    text_position_start + 20,
-                    text_position_start + 120,
-                    "FWHM axial           = " + str(int(FWHMa)) + "nm",
-                )
-                if channel != ref_chnl:
-                    shift_xy_text = TextRoi(
-                        text_position_start + 20,
-                        text_position_start + 140,
-                        "X Shift : "
-                        + str(brightest_spot["X_coord"] - ref_chnl_x_coord)
-                        + "pxls; Y Shift : "
-                        + str(brightest_spot["Y_coord"] - ref_chnl_y_coord)
-                        + "pxls from C"
-                        + str(ref_chnl),
-                    )
-                    set_roi_color_and_position(
-                        shift_xy_text, Color.red, position_frame=channel_index + 1
-                    )
-                    text_overlay.add(shift_xy_text)
-
-                    shift_z_text = TextRoi(
-                        text_position_start + 20,
-                        text_position_start + 160,
-                        "Z Shift : "
-                        + str(stack_stats["best_slice"] - ref_chnl_z_coord)
-                        + "plane(s) from C"
-                        + str(ref_chnl),
-                    )
-                    set_roi_color_and_position(
-                        shift_z_text, Color.red, position_frame=channel_index + 1
-                    )
-                    text_overlay.add(shift_z_text)
-
-                    kv_dict.add(
-                        NamedValue(
-                            "C"
-                            + str(channel)
-                            + "_shift_X_ROI_"
-                            + str(region_roi.getName()),
-                            str(brightest_spot["X_coord"] - ref_chnl_x_coord),
-                        )
-                    )
-                    kv_dict.add(
-                        NamedValue(
-                            "C"
-                            + str(channel)
-                            + "_shift_Y_ROI_"
-                            + str(region_roi.getName()),
-                            str(brightest_spot["Y_coord"] - ref_chnl_y_coord),
-                        )
-                    )
-                    kv_dict.add(
-                        NamedValue(
-                            "C"
-                            + str(channel)
-                            + "_shift_Z_ROI_"
-                            + str(region_roi.getName()),
-                            str(stack_stats["best_slice"] - ref_chnl_z_coord),
-                        )
-                    )
-
-                avg_FWHM_X[channel - 1].append(FWHMl)
-                avg_FWHM_Y[channel - 1].append(FWHMly)
-                avg_FWHM_Z[channel - 1].append(FWHMa)
-                # kv_dict['C' + str(channel) + '_shift_Y'] = str(brightest_spot['Y_coord'] - C1_y_coord)
-                # kv_dict['C' + str(channel) + '_shift_Z'] = str(stack_stats['best_slice'] - C1_z_coord)
-
-                set_roi_color_and_position(
-                    date_text, Color.red, position_frame=channel_index + 1
-                )
-                set_roi_color_and_position(
-                    channel_text, Color.red, position_frame=channel_index + 1
-                )
-                set_roi_color_and_position(
-                    roi_text, Color.red, position_frame=channel_index + 1
-                )
-                set_roi_color_and_position(
-                    fwhml_text, Color.red, position_frame=channel_index + 1
-                )
-                set_roi_color_and_position(
-                    fwhml_avg_text, Color.red, position_frame=channel_index + 1
-                )
-                set_roi_color_and_position(
-                    fwhma_text, Color.red, position_frame=channel_index + 1
-                )
-
-                text_overlay.add(date_text)
-                text_overlay.add(channel_text)
-                text_overlay.add(roi_text)
-                text_overlay.add(fwhml_text)
-                text_overlay.add(fwhml_avg_text)
-                text_overlay.add(fwhma_text)
-
-                # stack_imp.setOverlay(text_overlay)
-                concat_array.append(stack_imp)
-
-                kv_dict.add(
-                    NamedValue(
-                        "C"
-                        + str(channel)
-                        + "_FWHM_Axial_X_ROI_"
-                        + str(region_roi.getName()),
-                        str(int(FWHMl)),
-                    )
-                )
-                kv_dict.add(
-                    NamedValue(
-                        "C"
-                        + str(channel)
-                        + "_FWHM_Axial_Y_ROI_"
-                        + str(region_roi.getName()),
-                        str(int(FWHMly)),
-                    )
-                )
-                kv_dict.add(
-                    NamedValue(
-                        "C"
-                        + str(channel)
-                        + "_FWHM_Axial_avg_ROI_"
-                        + str(region_roi.getName()),
-                        str(int((FWHMl + FWHMly) / 2)),
-                    )
-                )
-                kv_dict.add(
-                    NamedValue(
-                        "C" + str(channel) + "_FWHM_Z_ROI_" + str(region_roi.getName()),
-                        str(int(FWHMa)),
-                    )
-                )
-
-            concat_imp = Concatenator.run(concat_array)
-            concat_imp.setTitle(imp.getTitle() + "_maintenance")
-            # concat_imp.show()
-            # sys.exit()
-
-            concat_imp.setOverlay(text_overlay)
-            concat_imp.flattenStack()
-
-            fixed_title = (
-                re.sub(r"\.([^.]*)$", r"", imp.getTitle())
-                .replace(" ", "_")
-                .replace(":", "_")
-            )
-
-            roi_name = region_roi.getName()
-            roi_name = roi_name.replace(":", "_")
-            out_path = os.path.join(
-                destination,
-                fixed_title + "_maintenance_ROI_" + roi_name + ".tif",
-            )
-
-            IJ.log("\\Update5:Exporting image to temp folder...")
-            BFExport(concat_imp, out_path)
 
             if OMERO_link:
-                IJ.log("\\Update5:Uploading image to OMERO...")
-                upload_image_to_omero(out_path, gateway, dataset_id)
-                os.remove(out_path)
-                if not omero_roi:
-                    IJ.log("\\Update5:Uploading ROI to OMERO...")
-                    roivec = save_rois_to_omero(ctx, Long(image_id), Long(exp_id), imp)
-                concat_imp.close()
+                image_obj = browse.getImage(ctx, Long(image_id))
+
+                dataset_id, dataset_name, _ = get_dataset_ids(gateway, image_id)
+                project_name = get_project_name(gateway, dataset_id)
+
+                (
+                    obj_mag,
+                    obj_na,
+                    acq_date,
+                    acq_date_number,
+                ) = get_acquisition_metadata_from_imageid(ctx, gateway, image_id)
+
+                IJ.log("\\Update5:Fetching image from OMERO...")
+                openImagePlus(HOST, USERNAME, PASSWORD, groupId, image_id)
+                imp = IJ.getImage()
             else:
-                IJ.log("\\Update5:Image is saved : " + out_path)
+                imp = image_ids_array[0]
 
-        if rm.getCount() > 1:
+
+
+            # Set calibration in nm
+            average_values.extend([imp.getTitle()])
+            cal = imp.getCalibration()
+            unit_list = ["uM", "micron", "microns", "µm"]
+            unit_list = [i.decode("utf-8") for i in unit_list]
+            if cal.getUnit() in unit_list:
+                xy_voxel = cal.pixelWidth * 1000
+                cal.pixelWidth = xy_voxel
+                cal.pixelHeight = xy_voxel
+                z_voxel = cal.pixelDepth * 1000
+                cal.pixelDepth = z_voxel
+                cal.setUnit("nm")
+                imp.repaintWindow()
+            if cal.getUnit() in "nm":
+                xy_voxel = cal.pixelWidth
+                z_voxel = cal.pixelDepth
+
+            # Awaiting ROI or quits after 5 tries
+            count = 0
+
+            omero_roi = True
+            while (imp.getRoi() is None) and (rm.getCount() == 0):
+                omero_roi = False
+                WaitForUserDialog("Draw the region of interest and press OK").show()
+                if count == 5:
+                    sys.exit("Too many clicks without ROI")
+                else:
+                    count = count + 1
+
+            if rm.getCount() == 0:
+                rm.reset()
+                region_roi = imp.getRoi()
+                rm.addRoi(region_roi)
+
+            avg_FWHM_X = [[] for _ in range(imp.getNChannels())]
+            avg_FWHM_Y = [[] for _ in range(imp.getNChannels())]
+            avg_FWHM_Z = [[] for _ in range(imp.getNChannels())]
+
+            # omero_table = []
+
+            omero_avg_columns["Image Name"] = String
+
+            for region_index, region_roi in enumerate(rm.getRoisAsArray()):
+                progress_bar(region_index + 1, rm.getCount(), 3, "Processing ROI : ")
+                concat_array = []
+
+                if region_index == 0:
+                    channel_order = range(1, imp.getNChannels() + 1)
+                    channel_order.insert(0, channel_order.pop(ref_chnl - 1))
+
+                for channel_index, channel in enumerate(channel_order):
+                    progress_bar(
+                        channel_index + 1, imp.getNChannels(), 4, "Processing channel : "
+                    )
+
+                    # if region_index == 0:
+                    #     avg_FWHM_X.append([])
+                    #     avg_FWHM_Y.append([])
+                    #     avg_FWHM_Z.append([])
+
+                    # Find brightest spot
+                    IJ.run(imp, "Select None", "")
+
+                    imp_current_channel = duplicate_imp_and_calibrate(
+                        imp, specific_chnl=channel
+                    )
+
+                    stack_stats = scan_for_best_slice(imp_current_channel, region_roi)
+
+                    brightest_spot = coord_brightest_point(
+                        imp_current_channel, region_roi, stack_stats["best_slice"]
+                    )
+
+                    max_z = min(imp.getNSlices(), 100)
+
+                    if channel == ref_chnl:
+                        ref_chnl_x_coord = brightest_spot["X_coord"]
+                        ref_chnl_y_coord = brightest_spot["Y_coord"]
+                        ref_chnl_z_coord = stack_stats["best_slice"]
+
+                    ROI_size = round(roi_size_cal / xy_voxel)
+                    # ROI_size = region_roi.getBounds().width
+                    half_ROI_size = round(ROI_size / 2)
+
+                    centered_ROI = Roi(
+                        brightest_spot["X_coord"] - half_ROI_size,
+                        brightest_spot["Y_coord"] - half_ROI_size,
+                        ROI_size,
+                        ROI_size,
+                    )
+                    imp_centered_ROI_current_channel = duplicate_imp_and_calibrate(
+                        imp_current_channel, specific_chnl=1, roi=centered_ROI
+                    )
+
+                    ROI_size_bg = round(ROI_size / 10)
+                    bg_ROI = Roi(ROI_size_bg, ROI_size_bg, ROI_size_bg, ROI_size_bg)
+
+                    bg_subtraction(
+                        imp_centered_ROI_current_channel, stack_stats["best_slice"], bg_ROI
+                    )
+                    imp_centered_ROI_current_channel.show()
+
+                    x2 = int(min(brightest_spot["X_coord"], half_ROI_size))
+                    y2 = int(min(brightest_spot["Y_coord"], half_ROI_size))
+
+                    # Redimension stack
+                    while (
+                        stack_stats["best_slice"] + (max_z / 2)
+                        > imp_centered_ROI_current_channel.getNSlices()
+                    ):
+                        imp_centered_ROI_current_channel.setSlice(
+                            imp_centered_ROI_current_channel.getNSlices()
+                        )
+                        IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
+                    while (
+                        stack_stats["best_slice"] + (max_z / 2)
+                        < imp_centered_ROI_current_channel.getNSlices()
+                    ):
+                        imp_centered_ROI_current_channel.setSlice(
+                            imp_centered_ROI_current_channel.getNSlices()
+                        )
+                        IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
+                    while imp_centered_ROI_current_channel.getNSlices() > max_z:
+                        imp_centered_ROI_current_channel.setSlice(1)
+                        IJ.run(imp_centered_ROI_current_channel, "Delete Slice", "")
+                    while imp_centered_ROI_current_channel.getNSlices() < max_z:
+                        imp_centered_ROI_current_channel.setSlice(1)
+                        IJ.run(imp_centered_ROI_current_channel, "Add Slice", "")
+
+                    best_slice = max_z / 2
+
+                    # imp_centered_ROI_current_channel.show()
+                    # sys.exit()
+
+                    # Projections
+                    # X Projection
+                    imp_x_proj = reslice_based_on_roi(
+                        imp_centered_ROI_current_channel,
+                        ROI_size,
+                        y2,
+                        bg_ROI,
+                        best_slice,
+                        False,
+                    )
+                    H = imp_x_proj.getHeight()
+
+                    # Y Projection
+                    # IJ.selectWindow(imp_centered_ROI_current_channel.getTitle())
+                    IJ.run(imp_centered_ROI_current_channel, "Select None", "")
+                    imp_centered_ROI_current_channel.setSlice(best_slice)
+                    imp_y_proj = reslice_based_on_roi(
+                        imp_centered_ROI_current_channel,
+                        ROI_size,
+                        x2,
+                        bg_ROI,
+                        best_slice,
+                        True,
+                    )
+
+                    imp_centered_ROI_current_channel_proj = ZProjector.run(
+                        imp_centered_ROI_current_channel, "max", 1, 100
+                    )
+
+                    bg_subtraction(
+                        imp_centered_ROI_current_channel_proj, roi=bg_ROI, stat_to_use="min"
+                    )
+                    imp_centered_ROI_current_channel_proj.setTitle("Project")
+
+                    project_width = ROI_size * 2
+                    # imp_centered_ROI_current_channel_proj.show()
+                    imp_centered_ROI_current_channel_proj = change_canvas_size(
+                        imp_centered_ROI_current_channel_proj,
+                        project_width,
+                        project_width,
+                        "Top-Left",
+                        True,
+                    )
+
+                    imp_y_proj = change_canvas_size(
+                        imp_y_proj, project_width, project_width, "Top-Right", True, True
+                    )
+                    imp_x_proj = change_canvas_size(
+                        imp_x_proj, project_width, project_width, "Bottom-Left", True, True
+                    )
+                    # scale_value = half_final_size / ROI_size
+
+                    imp_centered_ROI_current_channel.show()
+                    imp_centered_ROI_current_channel_proj.show()
+                    imp_x_proj.show()
+                    imp_y_proj.show()
+
+                    ic = ImageCalculator()
+                    imp_montage = ic.run(
+                        "Add create", imp_centered_ROI_current_channel_proj, imp_x_proj
+                    )
+                    imp_montage.show()
+
+                    imp_montage_2 = ic.run("Add create", imp_montage, imp_y_proj)
+
+                    new_size = int((project_width * half_final_size) / ROI_size)
+                    imp_montage_2 = imp_montage_2.resize(new_size, new_size, "none")
+                    imp_montage_2 = change_canvas_size(
+                        imp_montage_2, final_size, final_size, "Top-Left", False
+                    )
+
+                    # imp_montage2 = imp_montage_2.resize(final_size, final_size, "none")
+
+                    text_position_start = half_final_size
+
+                    imp_montage_2.setTitle("Project")
+                    imp_montage_2.show()
+
+                    # sys.exit()
+
+                    imp_montage.changes = False
+                    imp_x_proj.changes = False
+                    imp_y_proj.changes = False
+                    imp_centered_ROI_current_channel_proj.changes = False
+                    imp_montage.close()
+                    imp_x_proj.close()
+                    imp_y_proj.close()
+                    imp_centered_ROI_current_channel_proj.close()
+
+                    IJ.run(imp_montage_2, "32-bit", "")
+                    IJ.run(imp_montage_2, "Square Root", "")
+                    proj_stats = imp_montage_2.getStatistics()
+                    imp_montage_2.setDisplayRange(proj_stats.mean, proj_stats.max)
+                    imp_montage_2.getProcessor().invert()
+                    imp_montage_2.updateAndDraw()
+                    IJ.run(imp_montage_2, "LUTforPSFs2", "")
+                    IJ.run(imp_montage_2, "8-bit", "")
+                    IJ.run(imp_montage_2, "RGB Color", "")
+
+                    # ─── FWHM AXIAL ─────────────────────────────────────────────────────────────────
+
+                    z_profile_x = range(imp_centered_ROI_current_channel.getNSlices())
+                    z_profile_y = []
+                    for i in z_profile_x:
+                        imp_centered_ROI_current_channel.setSlice(i + 1)
+                        z_profile_y.append(
+                            imp_centered_ROI_current_channel.getPixel(x2, y2)[0]
+                        )
+
+                    curve_fitter_axial = CurveFitter(z_profile_x, z_profile_y)
+                    curve_fitter_axial.doFit(CurveFitter.GAUSSIAN)
+                    fit_results = curve_fitter_axial.getParams()
+                    rounded_fit_results = [round(num, 4) for num in fit_results]
+
+                    # ─── PLOT ───────────────────────────────────────────────────────────────────────
+
+                    amplitude = min(40, imp_centered_ROI_current_channel.getNSlices())
+                    max_graph = 0
+                    x_plot_ax_real = []
+                    y_plot_ax_real = []
+                    for i in range(amplitude):
+                        x_plot_ax_real.append((i - amplitude / 2) * z_voxel)
+                        y_plot_ax_real.append(z_profile_y[best_slice - amplitude / 2 + i])
+                        if y_plot_ax_real[i] >= max_graph:
+                            max_graph = y_plot_ax_real[i]
+
+                    y_min = 66000
+                    y_max = 0
+                    x_plot_ax_fit = []
+                    y_plot_ax_fit = []
+                    for i in range(amplitude * 4):
+                        x_plot_ax_fit.append((i / 4.0 - amplitude / 2.0) * z_voxel)
+                        x = best_slice - amplitude / 2.0 + i / 4.0
+                        y_plot_ax_fit.append(
+                            fit_results[0]
+                            + (fit_results[1] - fit_results[0])
+                            * math.exp(
+                                (-(x - fit_results[2]) * (x - fit_results[2]))
+                                / (2 * fit_results[3] * fit_results[3])
+                            )
+                        )
+
+                        if y_plot_ax_fit[i] >= max_graph:
+                            max_graph = y_plot_ax_fit[i]
+                        if y_min > y_plot_ax_fit[i]:
+                            y_min = y_plot_ax_fit[i]
+                        if y_max < y_plot_ax_fit[i]:
+                            y_max = y_plot_ax_fit[i]
+
+                    HM = (y_max - y_min) / 2
+                    try:
+                        k = (
+                            -2
+                            * fit_results[3]
+                            * fit_results[3]
+                            * math.log(
+                                (HM - fit_results[0]) / (fit_results[1] - fit_results[0])
+                            )
+                        )
+                    except (ValueError, ZeroDivisionError):
+                        IJ.log(
+                            "ISSUE WITH CHANNEL "
+                            + str(channel)
+                            + " AND ROI "
+                            + str(region_index)
+                            + ", WILL BE SKIPPED"
+                        )
+                        temp_imp = IJ.createImage(
+                            "Untitled",
+                            "8-bit black",
+                            imp_montage_2.getWidth(),
+                            imp_montage_2.getHeight(),
+                            2,
+                        )
+                        stack_imp = ImagesToStack().run([imp_montage_2, temp_imp, temp_imp])
+                        concat_array.append(stack_imp)
+
+                        avg_FWHM_X[channel - 1].append(None)
+                        avg_FWHM_Y[channel - 1].append(None)
+                        avg_FWHM_Z[channel - 1].append(None)
+                        continue
+                    try:
+                        FWHMa = 2 * z_voxel * math.sqrt(k)
+                    except ValueError:
+                        FWHMa = 0
+
+                    fwhm_axial_plot = Plot(
+                        "FWHM axial", "Z", "Intensity", x_plot_ax_fit, y_plot_ax_fit
+                    )
+                    fwhm_axial_plot.setLimits(-4000, 4000, 0, max_graph * 1.1)
+                    fwhm_axial_plot.add("circles", x_plot_ax_real, y_plot_ax_real)
+                    fwhm_axial_plot.addLabel(0, 0, "FWHM axial =" + str(FWHMa) + "nm")
+                    fwhm_axial_imp = fwhm_axial_plot.getImagePlus()
+                    fwhm_axial_imp = change_canvas_size(
+                        fwhm_axial_imp, final_size, final_size, "Center", False
+                    )
+
+                    # fwhm_axial_imp.show()
+                    # ─── FWHM LATERAL ───────────────────────────────────────────────────────────────
+
+                    imp_centered_ROI_current_channel.setSlice(best_slice)
+                    x = range(-8, 9)
+                    y = []
+                    yy = []
+
+                    for i in range(17):
+                        temp_y = 0
+                        temp_yy = 0
+
+                        for k in range(
+                            int(-(math.floor(line_thickness / 2))),
+                            int(-(math.floor(line_thickness / 2)) + line_thickness),
+                        ):
+                            temp_y = (
+                                temp_y
+                                + imp_centered_ROI_current_channel.getPixel(
+                                    x2 - 8 + i, y2 + k
+                                )[0]
+                                / line_thickness
+                            )
+                            temp_yy = (
+                                temp_yy
+                                + imp_centered_ROI_current_channel.getPixel(
+                                    x2 + k, y2 - 8 + i
+                                )[0]
+                                / line_thickness
+                            )
+
+                        y.append(temp_y)
+                        yy.append(temp_yy)
+
+                    curve_fitter_lateral_1 = CurveFitter(x, y)
+                    curve_fitter_lateral_1.doFit(CurveFitter.GAUSSIAN)
+                    fit_results_lateral_1 = curve_fitter_lateral_1.getParams()
+
+                    curve_fitter_lateral_2 = CurveFitter(x, yy)
+                    curve_fitter_lateral_2.doFit(CurveFitter.GAUSSIAN)
+                    fit_results_lateral_2 = curve_fitter_lateral_2.getParams()
+
+                    # ─── PLOT ───────────────────────────────────────────────────────────────────────
+
+                    x_plot_lat_real = []
+                    y_plot_lat_real = []
+                    yy_plot_lat_real = []
+
+                    y_min = 66000
+                    y_max = 0
+                    max_graph = 0
+                    for i in range(17):
+                        x_plot_lat_real.append((i - 8) * xy_voxel)
+                        y_plot_lat_real.append(y[i])
+                        yy_plot_lat_real.append(yy[i])
+
+                        if max(y[i], yy[i]) >= max_graph:
+                            max_graph = max(y[i], yy[i])
+
+                    x_plot_lat_fit = []
+                    y_plot_lat_fit = []
+                    yy_plot_lat_fit = []
+
+                    for i in range(65):
+                        x = i / 4.0 - 8.0
+                        x_plot_lat_fit.append(x * xy_voxel)
+                        y_plot_lat_fit.append(
+                            fit_results_lateral_1[0]
+                            + (fit_results_lateral_1[1] - fit_results_lateral_1[0])
+                            * math.exp(
+                                (
+                                    -(x - fit_results_lateral_1[2])
+                                    * (x - fit_results_lateral_1[2])
+                                )
+                                / (2 * fit_results_lateral_1[3] * fit_results_lateral_1[3])
+                            )
+                        )
+                        yy_plot_lat_fit.append(
+                            fit_results_lateral_2[0]
+                            + (fit_results_lateral_2[1] - fit_results_lateral_2[0])
+                            * math.exp(
+                                (
+                                    -(x - fit_results_lateral_2[2])
+                                    * (x - fit_results_lateral_2[2])
+                                )
+                                / (2 * fit_results_lateral_2[3] * fit_results_lateral_2[3])
+                            )
+                        )
+
+                        if max(y_plot_lat_fit[i], yy_plot_lat_fit[i]) >= max_graph:
+                            max_graph = max(y_plot_lat_fit[i], yy_plot_lat_fit[i])
+                        if y_min > min(y_plot_lat_fit[i], yy_plot_lat_fit[i]):
+                            y_min = min(y_plot_lat_fit[i], yy_plot_lat_fit[i])
+                        if y_max < max(y_plot_lat_fit[i], yy_plot_lat_fit[i]):
+                            y_max = max(y_plot_lat_fit[i], yy_plot_lat_fit[i])
+
+                    HM = (y_max - y_min) / 2
+                    k = (
+                        -2
+                        * fit_results_lateral_1[3]
+                        * fit_results_lateral_1[3]
+                        * math.log(
+                            (HM - fit_results_lateral_1[0])
+                            / (fit_results_lateral_1[1] - fit_results_lateral_1[0])
+                        )
+                    )
+
+                    try:
+                        FWHMl = 2 * xy_voxel * math.sqrt(k)
+                    except ValueError:
+                        FWHMl = 0
+
+                    ky = (
+                        -2
+                        * fit_results_lateral_2[3]
+                        * fit_results_lateral_2[3]
+                        * math.log(
+                            (HM - fit_results_lateral_2[0])
+                            / (fit_results_lateral_2[1] - fit_results_lateral_2[0])
+                        )
+                    )
+                    try:
+                        FWHMly = 2 * xy_voxel * math.sqrt(ky)
+                    except ValueError:
+                        FWHMly = 0
+
+                    fwhm_lateral_plot = Plot(
+                        "FWHM lateral",
+                        "X (black) or Y (blue)",
+                        "Intensity",
+                        x_plot_lat_fit,
+                        y_plot_lat_fit,
+                    )
+                    fwhm_lateral_plot.setLimits(
+                        -8 * xy_voxel, 8 * xy_voxel, 0, max_graph * 1.1
+                    )
+                    fwhm_lateral_plot.setColor("blue")
+                    fwhm_lateral_plot.add("line", x_plot_lat_fit, yy_plot_lat_fit)
+                    fwhm_lateral_plot.add("circles", x_plot_lat_real, yy_plot_lat_real)
+                    fwhm_lateral_plot.setColor("black")
+                    fwhm_lateral_plot.add("circles", x_plot_lat_real, y_plot_lat_real)
+                    fwhm_lateral_plot.addLabel(
+                        0,
+                        0,
+                        "FWHM lateral X ="
+                        + str(round(FWHMl, 0))
+                        + "nm; FWHM lateral Y ="
+                        + str(round(FWHMly, 0))
+                        + "nm; Average ="
+                        + str(round((FWHMl + FWHMly) / 2))
+                        + "nm",
+                    )
+                    fwhm_lateral_imp = fwhm_lateral_plot.getImagePlus()
+                    fwhm_lateral_imp = change_canvas_size(
+                        fwhm_lateral_imp, final_size, final_size, "Center", False
+                    )
+
+                    imp_centered_ROI_current_channel.changes = False
+                    imp_centered_ROI_current_channel.close()
+
+                    stack_imp = ImagesToStack().run(
+                        [imp_montage_2, fwhm_axial_imp, fwhm_lateral_imp]
+                    )
+
+                    # stack_imp.show()
+
+                    # stack_position = 1 + ((channel-1) * 3)
+                    stack_position = channel
+
+                    if channel == ref_chnl:
+                        text_overlay = Overlay()
+                    text_font = Font("Arial", Font.PLAIN, 14)
+                    date_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 20,
+                        str(today),
+                        text_font,
+                    )
+                    channel_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 40,
+                        "Channel               = " + str(channel),
+                        text_font,
+                    )
+                    roi_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 60,
+                        "ROI                   = " + str(region_roi.getName()),
+                    )
+                    fwhml_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 80,
+                        "FWHM lateral          : X = "
+                        + str(int(FWHMl))
+                        + "nm;  Y = "
+                        + str(int(FWHMly))
+                        + "nm",
+                    )
+                    fwhml_avg_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 100,
+                        "FWHM lateral average = " + str(int((FWHMl + FWHMly) / 2)) + "nm",
+                    )
+                    fwhma_text = TextRoi(
+                        text_position_start + 20,
+                        text_position_start + 120,
+                        "FWHM axial           = " + str(int(FWHMa)) + "nm",
+                    )
+                    if channel == ref_chnl:
+                        x_shift = 0
+                        y_shift = 0
+                        z_shift = 0
+                    else:
+                        x_shift = brightest_spot["X_coord"] - ref_chnl_x_coord
+                        y_shift = brightest_spot["Y_coord"] - ref_chnl_y_coord
+                        z_shift = stack_stats["best_slice"] - ref_chnl_z_coord
+                        shift_xy_text = TextRoi(
+                            text_position_start + 20,
+                            text_position_start + 140,
+                            "X Shift : "
+                            + str(x_shift)
+                            + "pxls; Y Shift : "
+                            + str(y_shift)
+                            + "pxls from C"
+                            + str(ref_chnl),
+                        )
+                        set_roi_color_and_position(
+                            shift_xy_text, Color.red, position_frame=channel_index + 1
+                        )
+                        text_overlay.add(shift_xy_text)
+
+                        shift_z_text = TextRoi(
+                            text_position_start + 20,
+                            text_position_start + 160,
+                            "Z Shift : " + str(z_shift) + "plane(s) from C" + str(ref_chnl),
+                        )
+                        set_roi_color_and_position(
+                            shift_z_text, Color.red, position_frame=channel_index + 1
+                        )
+                        text_overlay.add(shift_z_text)
+
+                        kv_dict.add(
+                            NamedValue(
+                                "C"
+                                + str(channel)
+                                + "_shift_X_ROI_"
+                                + str(region_roi.getName()),
+                                str(brightest_spot["X_coord"] - ref_chnl_x_coord),
+                            )
+                        )
+                        kv_dict.add(
+                            NamedValue(
+                                "C"
+                                + str(channel)
+                                + "_shift_Y_ROI_"
+                                + str(region_roi.getName()),
+                                str(brightest_spot["Y_coord"] - ref_chnl_y_coord),
+                            )
+                        )
+                        kv_dict.add(
+                            NamedValue(
+                                "C"
+                                + str(channel)
+                                + "_shift_Z_ROI_"
+                                + str(region_roi.getName()),
+                                str(stack_stats["best_slice"] - ref_chnl_z_coord),
+                            )
+                        )
+
+                    avg_FWHM_X[channel - 1].append(FWHMl)
+                    avg_FWHM_Y[channel - 1].append(FWHMly)
+                    avg_FWHM_Z[channel - 1].append(FWHMa)
+                    # kv_dict['C' + str(channel) + '_shift_Y'] = str(brightest_spot['Y_coord'] - C1_y_coord)
+                    # kv_dict['C' + str(channel) + '_shift_Z'] = str(stack_stats['best_slice'] - C1_z_coord)
+
+                    set_roi_color_and_position(
+                        date_text, Color.red, position_frame=channel_index + 1
+                    )
+                    set_roi_color_and_position(
+                        channel_text, Color.red, position_frame=channel_index + 1
+                    )
+                    set_roi_color_and_position(
+                        roi_text, Color.red, position_frame=channel_index + 1
+                    )
+                    set_roi_color_and_position(
+                        fwhml_text, Color.red, position_frame=channel_index + 1
+                    )
+                    set_roi_color_and_position(
+                        fwhml_avg_text, Color.red, position_frame=channel_index + 1
+                    )
+                    set_roi_color_and_position(
+                        fwhma_text, Color.red, position_frame=channel_index + 1
+                    )
+
+                    text_overlay.add(date_text)
+                    text_overlay.add(channel_text)
+                    text_overlay.add(roi_text)
+                    text_overlay.add(fwhml_text)
+                    text_overlay.add(fwhml_avg_text)
+                    text_overlay.add(fwhma_text)
+
+                    # stack_imp.setOverlay(text_overlay)
+                    concat_array.append(stack_imp)
+
+                    kv_dict.add(
+                        NamedValue(
+                            "C"
+                            + str(channel)
+                            + "_FWHM_Axial_X_ROI_"
+                            + str(region_roi.getName()),
+                            str(int(FWHMl)),
+                        )
+                    )
+                    kv_dict.add(
+                        NamedValue(
+                            "C"
+                            + str(channel)
+                            + "_FWHM_Axial_Y_ROI_"
+                            + str(region_roi.getName()),
+                            str(int(FWHMly)),
+                        )
+                    )
+                    kv_dict.add(
+                        NamedValue(
+                            "C"
+                            + str(channel)
+                            + "_FWHM_Axial_avg_ROI_"
+                            + str(region_roi.getName()),
+                            str(int((FWHMl + FWHMly) / 2)),
+                        )
+                    )
+                    kv_dict.add(
+                        NamedValue(
+                            "C" + str(channel) + "_FWHM_Z_ROI_" + str(region_roi.getName()),
+                            str(int(FWHMa)),
+                        )
+                    )
+
+                    # omero_table.append(
+                    #     [
+                    #         Long(channel),
+                    #         region_roi.getName(),
+                    #         Long(ref_chnl),
+                    #         Double(FWHMl),
+                    #         Double(FWHMly),
+                    #         Double(FWHMa),
+                    #         str(x_shift),
+                    #         str(y_shift),
+                    #         str(z_shift),
+                    #         acq_date,
+                    #         Long(acq_date_number),
+                    #         project_name,
+                    #         str(int(obj_mag)) + "x",
+                    #         str(obj_na),
+                    #     ]
+                    # )
+
+                concat_imp = Concatenator.run(concat_array)
+                concat_imp.setTitle(imp.getTitle() + "_maintenance")
+                # concat_imp.show()
+                # sys.exit()
+
+                concat_imp.setOverlay(text_overlay)
+                concat_imp.flattenStack()
+
+                fixed_title = (
+                    re.sub(r"\.([^.]*)$", r"", imp.getTitle())
+                    .replace(" ", "_")
+                    .replace(":", "_")
+                )
+
+                roi_name = region_roi.getName()
+                roi_name = roi_name.replace(":", "_")
+                out_path = os.path.join(
+                    destination,
+                    fixed_title + "_maintenance_ROI_" + roi_name + ".tif",
+                )
+
+                IJ.log("\\Update5:Exporting image to temp folder...")
+                BFExport(concat_imp, out_path)
+
+                if OMERO_link:
+                    IJ.log("\\Update5:Uploading image to OMERO...")
+                    upload_image_to_omero(out_path, gateway, dataset_id)
+                    os.remove(out_path)
+                    if not omero_roi:
+                        IJ.log("\\Update5:Uploading ROI to OMERO...")
+                        roivec = save_rois_to_omero(ctx, Long(image_id), Long(exp_id), imp)
+                    concat_imp.close()
+                else:
+                    IJ.log("\\Update5:Image is saved : " + out_path)
+
+
             for i in range(imp.getNChannels()):
-                kv_dict.add(
-                    NamedValue(
-                        "AVERAGE_FWHM_X_All_ROIS_C" + str(i + 1),
-                        str(mean_from_list(avg_FWHM_X[i])),
+                if rm.getCount() > 1:
+                    kv_dict.add(
+                        NamedValue(
+                            "AVERAGE_FWHM_X_All_ROIS_C" + str(i + 1),
+                            str(mean_from_list(avg_FWHM_X[i])),
+                        )
                     )
-                )
-                kv_dict.add(
-                    NamedValue(
-                        "AVERAGE_FWHM_Y_All_ROIS_C" + str(i + 1),
-                        str(mean_from_list(avg_FWHM_Y[i])),
+                    kv_dict.add(
+                        NamedValue(
+                            "AVERAGE_FWHM_Y_All_ROIS_C" + str(i + 1),
+                            str(mean_from_list(avg_FWHM_Y[i])),
+                        )
                     )
-                )
-                kv_dict.add(
-                    NamedValue(
-                        "AVERAGE_FWHM_Z_All_ROIS_C" + str(i + 1),
-                        str(mean_from_list(avg_FWHM_Z[i])),
+                    kv_dict.add(
+                        NamedValue(
+                            "AVERAGE_FWHM_Z_All_ROIS_C" + str(i + 1),
+                            str(mean_from_list(avg_FWHM_Z[i])),
+                        )
                     )
+
+                average_values.extend(
+                    [
+                        # Long(i + 1),
+                        Double(mean_from_list(avg_FWHM_X[i])),
+                        Double(mean_from_list(avg_FWHM_Y[i])),
+                        Double(mean_from_list(avg_FWHM_Z[i])),
+                        # acq_date,
+                        # Long(acq_date_number),
+                        # project_name,
+                        # str(int(obj_mag)) + "x",
+                        # str(obj_na),
+                    ]
                 )
 
-        kv_dict.add(NamedValue("ACQUISITION_DATE", acq_date))
-        kv_dict.add(NamedValue("MICROSCOPE", project_name))
-        kv_dict.add(NamedValue("OBJECTIVE_MAGNIFICATION", str(int(obj_mag)) + "x"))
-        kv_dict.add(NamedValue("OBJECTIVE_NA", str(obj_na)))
-        kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
-        add_annotation(gateway, ctx, kv_dict, "MIP", image_obj)
+                omero_avg_columns["C" + str(i) + " FWHM Axial X"] = Double
+                omero_avg_columns["C" + str(i) + " FWHM Axial Y"] = Double
+                omero_avg_columns["C" + str(i) + " FWHM Z"] = Double
 
-        imp.close()
+            # omero_columns = OrderedDict()
+
+            # omero_columns["Channel"] = Long
+            # omero_columns["ROI"] = String
+            # omero_columns["Reference Channel"]= Long
+            # omero_columns["FWHM AxialX"] = Double
+            # omero_columns["FWHM AxialY"] = Double
+            # omero_columns["FWHM Z"] = Double
+            # omero_columns["Channel ShiftX"] = String
+            # omero_columns["Channel ShiftY"] = String
+            # omero_columns["Channel ShiftZ"] = String
+            # omero_columns["Acquisition Date" ] = String
+            # omero_columns["Acquisition Date Number"]= Long
+            # omero_columns["Microscope"] = String
+            # omero_columns["Objective Magnification"] = String
+            # omero_columns["Objective NA"] = String
+
+            # omero_avg_columns = OrderedDict()
+            # omero_avg_columns["Channel"] = Long
+            # omero_avg_columns["FWHM Axial X"] = Double
+            # omero_avg_columns["FWHM Axial Y"] = Double
+            # omero_avg_columns["FWHM Z"] = Double
+            omero_avg_columns["Acquisition Date"] = String
+            omero_avg_columns["Acquisition Date Number"] = Long
+            omero_avg_columns["Microscope"] = String
+            omero_avg_columns["Objective Magnification"] = String
+            omero_avg_columns["Objective NA"] = String
+            omero_avg_columns["Image"] = ImageData
+
+            average_values.extend(
+                [
+                    acq_date,
+                    Long(acq_date_number),
+                    project_name,
+                    str(int(obj_mag)) + "x",
+                    str(obj_na),
+                    image_obj,
+                ]
+            )
+
+            kv_dict.add(NamedValue("ACQUISITION_DATE", acq_date))
+            kv_dict.add(NamedValue("MICROSCOPE", project_name))
+            kv_dict.add(NamedValue("OBJECTIVE_MAGNIFICATION", str(int(obj_mag)) + "x"))
+            kv_dict.add(NamedValue("OBJECTIVE_NA", str(obj_na)))
+            kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
+            add_annotation(gateway, ctx, kv_dict, "MIP", image_obj)
+
+            imp.close()
+            omero_avg_table.append(average_values)
+
+            # omero_columns = create_table_columns(omero_columns)
+        omero_avg_columns = create_table_columns(omero_avg_columns)
+
+        # upload_array_as_omero_table(ctx, gateway, map(list, zip(*omero_table)), omero_columns, image_id)
+        upload_array_as_omero_table(
+            ctx, gateway, map(list, zip(*omero_avg_table)), omero_avg_columns, image_id
+        )
 
 
-finally:
-    gateway.disconnect()
+    finally:
+        gateway.disconnect()
 
 
-IJ.log("Script finished.")
+    IJ.log("Script finished.")
