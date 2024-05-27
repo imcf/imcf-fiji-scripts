@@ -645,7 +645,7 @@ def get_folder_size(source):
     return total_size
 
 
-def locate_latest_imaris(big_data):
+def locate_latest_imaris(paths_to_check=None):
     """Find paths to latest installed Imaris or ImarisFileConverter version.
 
     Parameters
@@ -662,13 +662,11 @@ def locate_latest_imaris(big_data):
         Will be empty if nothing is found.
     """
 
-    if big_data:
+    if not paths_to_check:
         paths_to_check = [
             r"C:\Program Files\Bitplane\ImarisFileConverter ",
             r"C:\Program Files\Bitplane\Imaris ",
         ]
-    else:
-        paths_to_check = [r"C:\Program Files\Bitplane\ImarisConvertBioformats "]
 
     imaris_paths = [""]
 
@@ -681,7 +679,7 @@ def locate_latest_imaris(big_data):
     return imaris_paths[-1]
 
 
-def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
+def convert_to_imaris2(convert_to_ims, path_to_image):
     """Convert a given file to Imaris5 .ims using ImarisConvert.exe directly with subprocess
 
     Parameters
@@ -698,13 +696,9 @@ def convert_to_imaris2(convert_to_ims, path_to_image, bigdata=True):
             file_extension = ".ics"
             path_to_image = path_root + file_extension
 
-        os.chdir(locate_latest_imaris(bigdata))
-        if bigdata:
-            exe_command = "ImarisConvert.exe"
-        else:
-            exe_command = "ImarisConvertBioformats.exe"
-        command = '"%s"  -i "%s" -of Imaris5 -o "%s"' % (
-            exe_command,
+        os.chdir(locate_latest_imaris())
+
+        command = 'ImarisConvert.exe  -i "%s" -of Imaris5 -o "%s"' % (
             path_to_image,
             path_to_image.replace(file_extension, ".ims"),
         )
@@ -830,6 +824,7 @@ for source_dir in all_source_dirs:
     allimages = list_all_filenames(source_dir, filetype)
 
     ome_metadata = get_ome_metadata(source_dir, allimages)
+
     # if filetype == "ome.tif":
     #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
     # else:
@@ -842,8 +837,6 @@ for source_dir in all_source_dirs:
         ome_metadata[6],
     )
 
-    sys.exit(0)
-
     # sys.exit(0)
     run_GC_stitcher(source_dir, fusion_method, bigdata, quick)
 
@@ -852,20 +845,20 @@ for source_dir in all_source_dirs:
         open_sequential_gcimages_from_folder(path, ome_metadata[9])
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
-        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
+        convert_to_imaris2(convert_to_ims, path_to_image)
         shutil.rmtree(path, ignore_errors=True)  # remove temp folder
 
     if bigdata and bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
-        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
+        convert_to_imaris2(convert_to_ims, path_to_image)
 
     if not bigdata and not bdv and not only_register:
         calibrate_current_image(ome_metadata[7], ome_metadata[8])
         path_to_image = save_current_image_with_BF_as_ics1(
             allimages[0], filetype, source_dir
         )
-        convert_to_imaris2(convert_to_ims, path_to_image, bigdata)
+        convert_to_imaris2(convert_to_ims, path_to_image)
 
     # run the garbage collector to clear the memory
     # Seems to not work in a function and needs to be started several times with waits in between :(
