@@ -169,7 +169,7 @@ def get_ome_metadata(source, imagenames):
             Image calibration unit
         image_dimensions_czt : list
             Number of images in dimensions c,z,t
-        series_naes : list(str)
+        series_names : list(str)
             Names of all series contained in the files
     """
 
@@ -229,7 +229,10 @@ def get_ome_metadata(source, imagenames):
 
         for series in range(series_count):
 
-            if series_count > 0:
+            if omeMeta.getImageName(series) == "macro image":
+                continue
+
+            if series_count > 0 and not str(image).endswith(".vsi"):
                 series_names.append(omeMeta.getImageName(series))
             else:
                 series_names.append(str(image))
@@ -239,19 +242,19 @@ def get_ome_metadata(source, imagenames):
             current_position_z = omeMeta.getPlanePositionZ(series, 0)
 
             physSizeX_max = (
-                physSizeX
-                if physSizeX >= omeMeta.getPixelsPhysicalSizeX(series)
-                else omeMeta.getPixelsPhysicalSizeX(series)
+                physSizeX.value()
+                if physSizeX.value() >= omeMeta.getPixelsPhysicalSizeX(series).value()
+                else omeMeta.getPixelsPhysicalSizeX(series).value()
             )
             physSizeY_max = (
-                physSizeY
-                if physSizeY >= omeMeta.getPixelsPhysicalSizeY(series)
-                else omeMeta.getPixelsPhysicalSizeY(series)
+                physSizeY.value()
+                if physSizeY.value() >= omeMeta.getPixelsPhysicalSizeY(series).value()
+                else omeMeta.getPixelsPhysicalSizeY(series).value()
             )
             physSizeZ_max = (
-                physSizeZ
-                if physSizeZ >= omeMeta.getPixelsPhysicalSizeZ(series)
-                else omeMeta.getPixelsPhysicalSizeZ(series)
+                physSizeZ.value()
+                if physSizeZ.value() >= omeMeta.getPixelsPhysicalSizeZ(series).value()
+                else omeMeta.getPixelsPhysicalSizeZ(series).value()
             )
 
             # get the absolute stage positions and store them
