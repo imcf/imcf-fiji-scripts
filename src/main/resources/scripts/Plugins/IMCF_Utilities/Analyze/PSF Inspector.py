@@ -584,7 +584,7 @@ def get_acquisition_metadata_from_imageid(ctx, gateway, image_id):
         obj_na = objective_data.getLensNA().getValue()
     if image_data.getAcquisitionDate() is None:
         if image_data.getFormat() == "ZeissCZI":
-            field = "Information|Document|CreationDate #1"
+            field = "Information|Document|CreationDate"
             date_field = get_info_from_original_metadata(ctx, gateway, image_id, field)
             acq_date = date_field.split("T")[0]
             acq_date_number = int(acq_date.replace("-", ""))
