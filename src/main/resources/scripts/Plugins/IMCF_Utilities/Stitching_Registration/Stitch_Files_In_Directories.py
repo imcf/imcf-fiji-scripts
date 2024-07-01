@@ -187,6 +187,7 @@ def get_ome_metadata(source, imagenames):
         reader.setMetadataStore(omeMeta)
         reader.setId(source + str(image))
         series_count = reader.getSeriesCount()
+        
 
         # get hyperstack dimensions from the first image
         if counter == 0:
@@ -251,11 +252,16 @@ def get_ome_metadata(source, imagenames):
                 if physSizeY.value() >= omeMeta.getPixelsPhysicalSizeY(series).value()
                 else omeMeta.getPixelsPhysicalSizeY(series).value()
             )
-            physSizeZ_max = (
-                physSizeZ.value()
-                if physSizeZ.value() >= omeMeta.getPixelsPhysicalSizeZ(series).value()
-                else omeMeta.getPixelsPhysicalSizeZ(series).value()
-            )
+            if omeMeta.getPixelsPhysicalSizeZ(series):
+
+                physSizeZ_max = (
+                    physSizeZ.value()
+                    if physSizeZ.value() >= omeMeta.getPixelsPhysicalSizeZ(series).value()
+                    else omeMeta.getPixelsPhysicalSizeZ(series).value()
+                )
+
+            else:
+                physSizeZ_max = 1.0
 
             # get the absolute stage positions and store them
             pos_x = current_position_x.value()
