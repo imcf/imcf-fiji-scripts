@@ -798,7 +798,11 @@ def mean_from_list(values_list, round_decimals=0):
         Mean value of the list
     """
     filtered_list = filter(None, values_list)
-    return round(float(sum(filtered_list)) / len(filtered_list), round_decimals)
+    try:
+        result =  round(float(sum(filtered_list)) / len(filtered_list), round_decimals)
+    except ZeroDivisionError:
+        result = 0
+    return result
 
 
 def bg_subtraction(imp, slice_number=None, roi=None, stat_to_use="mean"):
@@ -1460,15 +1464,18 @@ if __name__ == "__main__":
                     except ValueError:
                         FWHMl = 0
 
-                    ky = (
-                        -2
-                        * fit_results_lateral_2[3]
-                        * fit_results_lateral_2[3]
-                        * math.log(
-                            (HM - fit_results_lateral_2[0])
-                            / (fit_results_lateral_2[1] - fit_results_lateral_2[0])
+                    try:
+                        ky = (
+                            -2
+                            * fit_results_lateral_2[3]
+                            * fit_results_lateral_2[3]
+                            * math.log(
+                                (HM - fit_results_lateral_2[0])
+                                / (fit_results_lateral_2[1] - fit_results_lateral_2[0])
+                            )
                         )
-                    )
+                    except ZeroDivisionError:
+                        ky = 0
                     try:
                         FWHMly = 2 * xy_voxel * math.sqrt(ky)
                     except ValueError:
