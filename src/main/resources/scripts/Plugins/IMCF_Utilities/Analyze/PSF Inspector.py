@@ -33,8 +33,9 @@ from java.awt import Color, Font
 # java imports
 from java.lang import Double, Long, String
 from java.util import ArrayList
-from loci.plugins import BF, LociExporter
+from java.text import SimpleDateFormat
 
+from loci.plugins import BF, LociExporter
 from loci.plugins.in import ImporterOptions
 from loci.plugins.out import Exporter
 
@@ -322,10 +323,6 @@ def get_acquisition_metadata_from_imageid(user_client, image_wpr):
         obj_na = 0
     else:
         obj_na = objective_data.getLensNA().getValue()
-    if image_data.getAcquisitionDate() is None:
-        if image_data.getFormat() == "ZeissCZI":
-            field = "Information|Document|CreationDate"
-            date_field = get_info_from_original_metadata(ctx, gateway, image_id, field)
     if image_wpr.getAcquisitionDate() is None:
         if image_wpr.asDataObject().getFormat() == "ZeissCZI":
             field = "Information|Document|CreationDate"
@@ -337,7 +334,8 @@ def get_acquisition_metadata_from_imageid(user_client, image_wpr):
             acq_date_number = 0
 
     else:
-        acq_date = image_wpr.getAcquisitionDate().toString()
+        sdf = SimpleDateFormat("yyyy-MM-dd")
+        acq_date = sdf.format(image_wpr.getAcquisitionDate())  # image_wpr.getAcquisitionDate()
         acq_date_number = int(acq_date.replace("-", ""))
 
     return obj_mag, obj_na, acq_date, acq_date_number
@@ -1525,7 +1523,7 @@ if __name__ == "__main__":
             average_values.extend(
                 [
                     acq_date,
-                    Long(acq_date_number),
+                    acq_date_number,
                     project_name,
                     str(int(obj_mag)) + "x",
                     str(obj_na),
