@@ -291,7 +291,11 @@ def save_rois_to_omero(user_client, image_wpr, rm):
         ROI Manager containing the ROIs
 
     """
-    rois_to_upload = ROIWrapper.fromImageJ(rm.getRoisAsArray())
+    rois_list = rm.getRoisAsArray()
+    rois_arraylist = ArrayList(len(rois_list))
+    for roi in rois_list:
+    	rois_arraylist.add(roi)
+    rois_to_upload = ROIWrapper.fromImageJ(rois_arraylist)
     image_wpr.saveROIs(user_client, rois_to_upload)
 
 
@@ -795,6 +799,7 @@ if __name__ == "__main__":
 
             while (imp.getRoi() is None) and (rm.getCount() == 0):
                 omero_roi = False
+                imp.show()
                 WaitForUserDialog("Draw the region of interest and press OK").show()
                 if count == 5:
                     sys.exit("Too many clicks without ROI")
@@ -805,6 +810,8 @@ if __name__ == "__main__":
                 rm.reset()
                 region_roi = imp.getRoi()
                 rm.addRoi(region_roi)
+
+            imp.hide()
 
             avg_FWHM_X = [[] for _ in range(imp.getNChannels())]
             avg_FWHM_Y = [[] for _ in range(imp.getNChannels())]
@@ -1557,3 +1564,4 @@ if __name__ == "__main__":
 
 
     IJ.log("Script finished.")
+
