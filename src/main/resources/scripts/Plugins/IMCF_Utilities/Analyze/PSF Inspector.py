@@ -1545,7 +1545,7 @@ if __name__ == "__main__":
             kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
             if delete_previous_kv:
                 delete_annotation(user_client, image_wpr)
-            add_annotation(user_client, dataset_wpr, kv_dict, "PSF Inspector")
+            add_annotation(user_client, image_wpr, kv_dict, "PSF Inspector")
 
             imp.close()
             omero_avg_table.append(average_values)
