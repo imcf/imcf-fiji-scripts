@@ -253,10 +253,10 @@ def get_ome_metadata(source, imagenames):
                 else omeMeta.getPixelsPhysicalSizeY(series).value()
             )
             if omeMeta.getPixelsPhysicalSizeZ(series):
-
                 physSizeZ_max = (
                     physSizeZ.value()
-                    if physSizeZ.value() >= omeMeta.getPixelsPhysicalSizeZ(series).value()
+                    if physSizeZ.value()
+                    >= omeMeta.getPixelsPhysicalSizeZ(series).value()
                     else omeMeta.getPixelsPhysicalSizeZ(series).value()
                 )
 
