@@ -2,6 +2,7 @@
 # @String(label="file type") filetype
 # @Boolean(label="quick stitch by stage coordinates", value="False") quick
 # @Boolean(label="save as BigDataViewer hdf5 instead", value="False") bdv
+# @Double(label="Regression threshold", value=0.25) reg_threshold
 # @Boolean(label="conserve RAM but be slower", description="tick this if your previous attempt failed with <Out of memory> error", value="False") bigdata
 # @Boolean (label="convert stitched & fused image to Imaris5", description="convert the fused image to *.ims", value=True) convert_to_ims
 # @String (label="Send info email to: ", description="empty = skip", required="False") email_address
@@ -187,7 +188,6 @@ def get_ome_metadata(source, imagenames):
         reader.setMetadataStore(omeMeta)
         reader.setId(source + str(image))
         series_count = reader.getSeriesCount()
-        
 
         # get hyperstack dimensions from the first image
         if counter == 0:
@@ -229,11 +229,10 @@ def get_ome_metadata(source, imagenames):
         reader.close()
 
         for series in range(series_count):
-
             if omeMeta.getImageName(series) == "macro image":
                 continue
 
-            if series_count > 0 and not str(image).endswith(".vsi"):
+            if series_count > 1 and not str(image).endswith(".vsi"):
                 series_names.append(omeMeta.getImageName(series))
             else:
                 series_names.append(str(image))
@@ -367,7 +366,7 @@ def write_tileconfig(
     f.close()
 
 
-def run_GC_stitcher(source, fusion_method, bigdata, quick):
+def run_GC_stitcher(source, fusion_method, bigdata, quick, reg_threshold):
     """Run the Grid/Collection stitching using a TileConfiguration.txt
 
     Parameters
@@ -404,7 +403,9 @@ def run_GC_stitcher(source, fusion_method, bigdata, quick):
         + " fusion_method=["
         + fusion_method
         + "] "
-        + "regression_threshold=0.30 "
+        + "regression_threshold="
+        + str(reg_threshold)
+        + " "
         + "max/avg_displacement_threshold=2.50 "
         + "absolute_displacement_threshold=3.50 "
         + ("" if quick else "compute_overlap subpixel_accuracy ")
@@ -617,8 +618,8 @@ def open_sequential_gcimages_from_folder(source, image_dimensions_czt):
 
     imp = FolderOpener.open(str(source), "virtual")
     total_images_in_stack = imp.getNSlices()
-    z_total = total_images_in_stack / (
-        c_end * t_end
+    z_total = (
+        total_images_in_stack / (c_end * t_end)
     )  # needs to be inferred rather than taken from raw image metadata as the G/C-stitcher might have added z-planes
     imp2 = HyperStackConverter.toHyperStack(
         imp, c_end, z_total, t_end, "default", "Color"
@@ -844,7 +845,7 @@ for source_dir in all_source_dirs:
     )
 
     # sys.exit(0)
-    run_GC_stitcher(source_dir, fusion_method, bigdata, quick)
+    run_GC_stitcher(source_dir, fusion_method, bigdata, quick, reg_threshold)
 
     if bigdata and not only_register:
         path = source_dir + "temp/"
