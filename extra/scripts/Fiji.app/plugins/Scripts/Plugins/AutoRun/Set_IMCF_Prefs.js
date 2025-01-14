@@ -62,10 +62,10 @@ function checkFileAndSetPrefs() {
             Prefs.savePreferences();
             log_debug("Preferences successfully set.");
         } else {
-            log_debug("Missing 'smtpserver' or 'sender_address' in config.json.");
+            log_debug("Missing 'smtpserver' or 'sender_address' in imcf-settings.json.");
         }
     } else {
-        log_debug("'imcf' key not found in config.json.");
+        log_debug("'imcf' key not found in imcf-settings.json.");
     }
 }
 
