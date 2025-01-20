@@ -18,7 +18,6 @@
 
 import glob
 import os
-import re
 import shutil
 import smtplib
 import subprocess
@@ -712,145 +711,105 @@ def send_mail(sender, recipient, filename, total_execution_time_min):
         print("Error: unable to send email")
 
 
-def sorted_alphanumeric(data):
-    """Sort a list alphanumerically
-
-    Parameters
-    ----------
-    data : list
-        List of filenames to sort
-
-    Returns
-    -------
-    list
-        Sorted list
-    """
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
-    return sorted(data, key=alphanum_key)
-
-
-def elapsed_time_since(start, end=None):
-    """Prints the elapsed time for execution
-
-    Parameters
-    ----------
-    start : time
-        Start time
-    end : time, optional
-        End time
-
-    Returns
-    -------
-    str
-        Formatted time elapsed
-    """
-
-    if not end:
-        end = time.time()
-
-    hours, rem = divmod(end - start, 3600)
-    minutes, seconds = divmod(rem, 60)
-    return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds)
-
-
 # ─── Main Code ────────────────────────────────────────────────────────────────
 
-# start the process
-execution_start_time = time.time()
+if __name__ == "__main__":
+    # start the process
+    execution_start_time = time.time()
+
+    if not filetype.startswith("."):
+        filetype = "." + filetype
+
+    # In case script is ran batch
+    if os.path.isfile(source.getAbsolutePath()):
+        source = os.path.dirname(source.getAbsolutePath())
+    source = fix_ij_dirs(source)
+    all_source_dirs = list_dirs_containing_filetype(source, filetype)
+
+    if only_register:
+        fusion_method = "Do not fuse images (only write TileConfiguration)"
+        IJ.log(
+            "The output will only be the txt file containing registered positions for the tiles."
+        )
+        IJ.log("As such, no HDF5 resaving or Imaris conversion will be happening.")
+    else:
+        fusion_method = "Linear Blending"
+
+    for source_dir in all_source_dirs:
+        IJ.log("Now working on " + source_dir)
+        print("bigdata= ", str(bigdata))
+        free_memory_bytes = MemoryTools().totalAvailableMemory()
+        folder_size_bytes = get_folder_size(source_dir)
+        if free_memory_bytes / folder_size_bytes < 3.5:
+            bigdata = True
+            IJ.log("Not enough free RAM, switching to BigData mode (slow)")
+
         allimages = pathtools.listdir_matching(source_dir, filetype, sort=True)
 
-if not filetype.startswith("."):
-    filetype = "." + filetype
+        ome_metadata = get_ome_metadata(source_dir, allimages)
 
-# In case script is ran batch
-if os.path.isfile(source.getAbsolutePath()):
-    source = os.path.dirname(source.getAbsolutePath())
-source = fix_ij_dirs(source)
-all_source_dirs = list_dirs_containing_filetype(source, filetype)
-
-if only_register:
-            path = pathtools.join2(source_dir, "temp")
-    IJ.log(
-        "The output will only be the txt file containing registered positions for the tiles."
-    )
-    IJ.log("As such, no HDF5 resaving or Imaris conversion will be happening.")
-else:
-    fusion_method = "Linear Blending"
-
-for source_dir in all_source_dirs:
-    IJ.log("now working on " + source_dir)
-    print("bigdata= ", str(bigdata))
-    free_memory_bytes = MemoryTools().totalAvailableMemory()
-    folder_size_bytes = get_folder_size(source_dir)
-    if free_memory_bytes / folder_size_bytes < 3.5:
-        bigdata = True
-        IJ.log("not enough free RAM, switching to BigData mode (slow)")
-
-    allimages = list_all_filenames(source_dir, filetype)
-
-    ome_metadata = get_ome_metadata(source_dir, allimages)
-
-    # if filetype == "ome.tif":
-    #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
-    # else:
-    write_tileconfig(
-        source_dir,
-        ome_metadata[0],
-        ome_metadata[10],
-        ome_metadata[4],
-        ome_metadata[5],
-        ome_metadata[6],
-    )
-
-    # sys.exit(0)
-    run_GC_stitcher(source_dir, fusion_method, bigdata, quick, reg_threshold)
-
-    if bigdata and not only_register:
-        path = source_dir + "temp/"
-        open_sequential_gcimages_from_folder(path, ome_metadata[9])
-        calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
-        convert_to_imaris2(convert_to_ims, path_to_image)
-        shutil.rmtree(path, ignore_errors=True)  # remove temp folder
-
-    if bigdata and bdv and not only_register:
-        calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_as_bdv(allimages[0], filetype, source_dir)
-        convert_to_imaris2(convert_to_ims, path_to_image)
-
-    if not bigdata and not bdv and not only_register:
-        calibrate_current_image(ome_metadata[7], ome_metadata[8])
-        path_to_image = save_current_image_with_BF_as_ics1(
-            allimages[0], filetype, source_dir
+        # if filetype == "ome.tif":
+        #     write_tileconfig(source_dir, ome_metadata[0], allimages, ome_metadata[1], ome_metadata[2], ome_metadata[3])
+        # else:
+        write_tileconfig(
+            source_dir,
+            ome_metadata[0],
+            ome_metadata[10],
+            ome_metadata[4],
+            ome_metadata[5],
+            ome_metadata[6],
         )
-        convert_to_imaris2(convert_to_ims, path_to_image)
 
-    # run the garbage collector to clear the memory
+        run_GC_stitcher(source_dir, fusion_method, bigdata, quick, reg_threshold)
+
+        if bigdata and not only_register:
+            path = pathtools.join2(source_dir, "temp")
+            open_sequential_gcimages_from_folder(path, ome_metadata[9])
+            calibrate_current_image(ome_metadata[7], ome_metadata[8])
+            path_to_image = save_current_image_as_bdv(
+                allimages[0], filetype, source_dir
+            )
+            convert_to_imaris2(convert_to_ims, path_to_image)
+            shutil.rmtree(path, ignore_errors=True)  # remove temp folder
+
+        if bigdata and bdv and not only_register:
+            calibrate_current_image(ome_metadata[7], ome_metadata[8])
+            path_to_image = save_current_image_as_bdv(
+                allimages[0], filetype, source_dir
+            )
+            convert_to_imaris2(convert_to_ims, path_to_image)
+
+        if not bigdata and not bdv and not only_register:
+            calibrate_current_image(ome_metadata[7], ome_metadata[8])
+            path_to_image = save_current_image_with_BF_as_ics1(
+                allimages[0], filetype, source_dir
+            )
+            convert_to_imaris2(convert_to_ims, path_to_image)
+
+        # run the garbage collector to clear the memory
+        # Seems to not work in a function and needs to be started several times with waits in between :(
+        IJ.log("collecting garbage...")
+        IJ.run("Collect Garbage", "")
+        time.sleep(60.0)
+        IJ.run("Collect Garbage", "")
+        time.sleep(60.0)
+        IJ.run("Collect Garbage", "")
+        time.sleep(60.0)
+
     total_execution_time_min = misc.elapsed_time_since(execution_start_time)
-    IJ.log("collecting garbage...")
-    IJ.run("Collect Garbage", "")
-    time.sleep(60.0)
-    IJ.run("Collect Garbage", "")
-    time.sleep(60.0)
-    IJ.run("Collect Garbage", "")
-    time.sleep(60.0)
 
-total_execution_time_min = elapsed_time_since(execution_start_time)
+    if email_address != "":
+        send_mail("imcf@unibas.ch", email_address, source, total_execution_time_min)
+    else:
+        print("Email address field is empty, no email was sent")
 
-if email_address != "":
-    send_mail("imcf@unibas.ch", email_address, source, total_execution_time_min)
-else:
-    print("Email address field is empty, no email was sent")
-
-
-# update the log
-IJ.log("##### summary #####")
-IJ.log("number of folders stitched: " + str(len(all_source_dirs)))
-IJ.log("quick stitch by stage coordinates: " + str(quick))
-IJ.log("save as BigDataViewer hdf5 instead: " + str(bdv))
-IJ.log("conserve RAM= " + str(bigdata))
-IJ.log("total time in [HH:MM:SS:ss]: " + str(total_execution_time_min))
-IJ.log("All done")
-IJ.selectWindow("Log")
-IJ.saveAs("Text", os.path.join(source, "stitch_log"))
+    # update the log
+    IJ.log("##### summary #####")
+    IJ.log("number of folders stitched: " + str(len(all_source_dirs)))
+    IJ.log("quick stitch by stage coordinates: " + str(quick))
+    IJ.log("save as BigDataViewer hdf5 instead: " + str(bdv))
+    IJ.log("conserve RAM= " + str(bigdata))
+    IJ.log("total time in [HH:MM:SS:ss]: " + str(total_execution_time_min))
+    IJ.log("All done")
+    IJ.selectWindow("Log")
+    IJ.saveAs("Text", os.path.join(source, "stitch_log"))
