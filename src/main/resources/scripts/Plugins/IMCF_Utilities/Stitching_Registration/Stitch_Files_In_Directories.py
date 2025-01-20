@@ -29,6 +29,8 @@ from io.scif.util import MemoryTools
 from ij import IJ
 from ij import WindowManager as wm
 from ij.plugin import FolderOpener, HyperStackConverter
+from imcflibs import pathtools
+from imcflibs.imagej import misc
 
 # ome imports to parse metadata
 from loci.formats import ImageReader, MetadataTools
@@ -92,50 +94,6 @@ def list_dirs_containing_filetype(source, filetype):
     return dirs_containing_filetype
 
 
-def list_all_filenames(source, filetype):
-    """Get a sorted list of all files of specified filetype in a given directory
-
-    Parameters
-    ----------
-    source : str
-        Path to source dir
-    filetype : str
-        File extension to specify filetype
-
-    Returns
-    -------
-    list
-        List of all files of the given type in the source dir
-    """
-
-    os.chdir(str(source))
-    allimages = sorted_alphanumeric(glob.glob("*" + filetype))  # sorted by name
-
-    return allimages
-
-
-def list_all_series(source, filetype):
-    """Get a sorted list of all series of specified filetype in a given directory
-
-    Parameters
-    ----------
-    source : str
-        Path to source dir
-    filetype : str
-        File extension to specify filetype
-
-    Returns
-    -------
-    list
-        List of all series of the given type in the source dir
-    """
-
-    os.chdir(str(source))
-    allseries = sorted_alphanumeric(glob.glob("*" + filetype))  # sorted by name
-
-    return allseries
-
-
 def get_ome_metadata(source, imagenames):
     """Get the stage coordinates and calibration from the ome-xml for a given list of images
 
@@ -143,7 +101,7 @@ def get_ome_metadata(source, imagenames):
     ----------
     source : str
         Path to the images
-    imagenames : list
+    imagenames : list of str
         List of images filenames
 
     Returns
@@ -800,6 +758,7 @@ def elapsed_time_since(start, end=None):
 
 # start the process
 execution_start_time = time.time()
+        allimages = pathtools.listdir_matching(source_dir, filetype, sort=True)
 
 if not filetype.startswith("."):
     filetype = "." + filetype
@@ -811,7 +770,7 @@ source = fix_ij_dirs(source)
 all_source_dirs = list_dirs_containing_filetype(source, filetype)
 
 if only_register:
-    fusion_method = "Do not fuse images (only write TileConfiguration)"
+            path = pathtools.join2(source_dir, "temp")
     IJ.log(
         "The output will only be the txt file containing registered positions for the tiles."
     )
@@ -868,7 +827,7 @@ for source_dir in all_source_dirs:
         convert_to_imaris2(convert_to_ims, path_to_image)
 
     # run the garbage collector to clear the memory
-    # Seems to not work in a function and needs to be started several times with waits in between :(
+    total_execution_time_min = misc.elapsed_time_since(execution_start_time)
     IJ.log("collecting garbage...")
     IJ.run("Collect Garbage", "")
     time.sleep(60.0)
