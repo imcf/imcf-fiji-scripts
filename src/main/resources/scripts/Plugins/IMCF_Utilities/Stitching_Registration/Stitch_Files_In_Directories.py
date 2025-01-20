@@ -156,10 +156,10 @@ def get_ome_metadata(source, imagenames):
             frame_size_t = reader.getSizeT()
 
             # note the dimensions
-            # if frame_size_z == 1:
-            #     dimensions = 2
-            # if frame_size_z > 1:
-            dimensions = 3
+            if frame_size_z == 1:
+                dimensions = 2
+            if frame_size_z > 1:
+                dimensions = 3
 
             # get the physical calibration for the first image series
             physSizeX = omeMeta.getPixelsPhysicalSizeX(0)
