@@ -127,8 +127,10 @@ def get_ome_metadata(source, imagenames):
             Image calibration unit
         image_dimensions_czt : list
             Number of images in dimensions c,z,t
-        series_names : list(str)
+        series_names : list of str
             Names of all series contained in the files
+        max_size : list of int
+            Maximum size across all files in dimensions x,y,z
     """
 
     # open an array to store the abosolute stage coordinates from metadata
