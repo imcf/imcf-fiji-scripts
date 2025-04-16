@@ -4,29 +4,20 @@
 
 # ─── IMPORTS ────────────────────────────────────────────────────────────────────
 
-import glob
-import os
-import re
 import string
-
-from ome.xml.model import OME, Plate, TiffData, Well, WellSample, UUID
-from ome.xml.model.primitives import NonNegativeInteger
-
-from ome.specification import XMLWriter
-
 
 from ij import IJ
 from imcflibs import pathtools, strtools
 from imcflibs.imagej import misc
-
-from java.lang import Integer
 from java.io import File
+from java.lang import Integer
 from java.util import UUID as juuid
-
-# Bioformats imports
+from loci.formats import ImageReader, MetadataTools
+from ome.specification import XMLWriter
+from ome.xml.model import OME, UUID, Plate, TiffData, Well, WellSample
+from ome.xml.model.primitives import NonNegativeInteger
 
 # ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
-
 
 
 def get_ome_reader_from_image(path_to_image):
