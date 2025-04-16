@@ -28,46 +28,17 @@ from ij.plugin import (
     ZProjector,
 )
 from ij.plugin.frame import RoiManager
+from imcflibs.imagej import bioformats as bf
+from imcflibs.imagej import misc, omerotools
 from java.awt import Color, Font
 
 # java imports
 from java.lang import Double, Long, String
 from java.util import ArrayList
-from java.text import SimpleDateFormat
-
-from loci.plugins import BF, LociExporter
-from loci.plugins.in import ImporterOptions
-from loci.plugins.out import Exporter
-
-from fr.igred.omero import Client
-from fr.igred.omero.roi import ROIWrapper
-from fr.igred.omero.annotations import TableWrapper, MapAnnotationWrapper
-
-from loci.formats.in import DefaultMetadataOptions, MetadataLevel
-
-from omero.gateway.model import ImageData, TableData, TableDataColumn
+from omero.gateway.model import ImageData
 from omero.model import NamedValue
-from omero.cmd import OriginalMetadataRequest
+
 # ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
-
-def BFImport(indivFile):
-    """Import the file using BioFormats
-
-    Parameters
-    ----------
-    indivFile : str
-        Path of the file to open
-
-    Returns
-    -------
-    list(ij.ImagePlus)
-        Array of ImagePlus read from the file
-    """
-
-    options = ImporterOptions()
-    options.setId(str(indivFile))
-    options.setColorMode(ImporterOptions.COLOR_MODE_COMPOSITE)
-    return BF.openImagePlus(options)
 
 
 def coord_brightest_point(input_imp, selected_roi, best_slice):
@@ -156,221 +127,6 @@ def scan_for_best_slice(input_imp, selected_roi):
 
     input_imp_dup.close()
     return stack_stats
-
-
-def parse_url(omero_str):
-    """Parse an OMERO URL with one or multiple images selected
-
-    Parameters
-    ----------
-    omero_str : str
-        String which is either the link gotten from OMERO or image IDs separated by commas
-
-    Returns
-    -------
-    list(str)
-        List of all the images IDs parsed from the string
-    """
-    if omero_str.startswith("https"):
-        image_ids = omero_str.split("image-")
-        image_ids.pop(0)
-        image_ids = [s.split("%")[0].replace("|", "") for s in image_ids]
-    else:
-        image_ids = omero_str.split(",")
-    return image_ids
-
-
-def upload_image_to_omero(user_client, path, dataset_id):
-    """Upload the image back to OMERO
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    path : str
-        Path of the file to upload back to OMERO
-    dataset_id : Long
-        ID of the dataset where to upload the file
-
-    """
-
-    user_client.getDataset(dataset_id).importImage(user_client, path)
-
-
-def BFExport(imp, savepath):
-    """Export using BioFormats
-
-    Parameters
-    ----------
-    imp : ij.ImagePlus
-        ImagePlus of the file to save
-    savepath : str
-        Path where to save the image
-
-    """
-
-    # print('Savepath: ', savepath)
-    paramstring = (
-        "outfile=["
-        + savepath
-        + "] "
-        + "windowless=true compression=Uncompressed saveROI=true"
-    )
-    plugin = LociExporter()
-    plugin.arg = paramstring
-    exporter = Exporter(plugin, imp)
-    exporter.run()
-
-def progress_bar(progress, total, line_number, prefix=""):
-    """Progress bar for the IJ log window
-
-    Parameters
-    ----------
-    progress : int
-        Current step of the loop
-    total : int
-        Total number of steps for the loop
-    line_number : int
-        Number of the line to be updated
-    prefix : str, optional
-        Text to use before the progress bar, by default ''
-    """
-
-    size = 30
-    x = int(size * progress / total)
-    IJ.log(
-        "\\Update%i:%s\t[%s%s] %i/%i\r"
-        % (line_number, prefix, "#" * x, "." * (size - x), progress, total)
-    )
-
-
-def add_annotation(user_client, repository_wpr, dict, header):
-    """Add annotation to OMERO object
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    repository_wpr : fr.igred.omero.repositor.GenericRepositoryObjectWrapper
-        Wrapper to the object for the anotation
-    dict : dict
-        Dictionary with the annotation to add
-    header : str
-        Name for the annotation header
-    """
-    # for pair in dict:
-    #     result.add
-    map_annotation_wpr = MapAnnotationWrapper(dict)
-    map_annotation_wpr.setNameSpace(header)
-    repository_wpr.addMapAnnotation(user_client, map_annotation_wpr)
-
-def delete_annotation(user_client, repository_wpr):
-    """Delete annotations linked to object
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    repository_wpr : fr.igred.omero.repositor.GenericRepositoryObjectWrapper
-        Wrapper to the object for the anotation
-
-    """
-    kv_pairs = repository_wpr.getMapAnnotations(user_client)
-    user_client.delete(kv_pairs)
-
-def save_rois_to_omero(user_client, image_wpr, rm):
-    """Save ROIs to OMERO linked to the image
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    image_wpr : fr.igred.omero.repositor.ImageWrapper
-        Wrapper to the image for the ROIs
-    rm : ij.plugin.frame.RoiManager
-        ROI Manager containing the ROIs
-
-    """
-    rois_list = rm.getRoisAsArray()
-    rois_arraylist = ArrayList(len(rois_list))
-    for roi in rois_list:
-    	rois_arraylist.add(roi)
-    rois_to_upload = ROIWrapper.fromImageJ(rois_arraylist)
-    image_wpr.saveROIs(user_client, rois_to_upload)
-
-
-def get_acquisition_metadata_from_imageid(user_client, image_wpr):
-    """Get acquisition metadata from OMERO based on an image ID
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    image_wpr : fr.igred.omero.repositor.ImageWrapper
-        Wrapper to the image for the ROIs
-
-    Returns
-    -------
-    tuple of (int, int, str, int)
-        List of info about the acquisition
-    """
-    ctx = user_client.getCtx()
-    instrument_data = user_client.getGateway().getMetadataService(ctx).loadInstrument(
-        image_wpr.asDataObject().getInstrumentId()
-    )
-    objective_data = instrument_data.copyObjective().get(0)
-    if objective_data.getNominalMagnification() is None:
-        obj_mag = 0
-    else:
-        obj_mag = objective_data.getNominalMagnification().getValue()
-    if objective_data.getLensNA() is None:
-        obj_na = 0
-    else:
-        obj_na = objective_data.getLensNA().getValue()
-    if image_wpr.getAcquisitionDate() is None:
-        if image_wpr.asDataObject().getFormat() == "ZeissCZI":
-            field = "Information|Document|CreationDate"
-            date_field = get_info_from_original_metadata(user_client, image_id, field)
-            acq_date = date_field.split("T")[0]
-            acq_date_number = int(acq_date.replace("-", ""))
-        else:
-            acq_date = "NA"
-            acq_date_number = 0
-
-    else:
-        sdf = SimpleDateFormat("yyyy-MM-dd")
-        acq_date = sdf.format(image_wpr.getAcquisitionDate())  # image_wpr.getAcquisitionDate()
-        acq_date_number = int(acq_date.replace("-", ""))
-
-    return obj_mag, obj_na, acq_date, acq_date_number
-
-
-def get_info_from_original_metadata(user_client, image_id, field):
-    """Recovers information from the original metadata
-
-    In some cases, some information aren't parsed correctly by BF and have to
-    get recovered directly from the original metadata. This gets the value
-    based on the field string.
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    image_id : int
-        ID of the image to look.
-    field : str
-        Field to look for in the original metadata. Needs to be found beforehand.
-
-    Returns
-    -------
-    str
-        Value of the field
-    """
-    omr = OriginalMetadataRequest(Long(image_id))
-    cmd = user_client.getGateway().submit(user_client.getCtx(), omr)
-    rsp = cmd.loop(5, 500)
-    gm = rsp.globalMetadata
-    return gm.get(field).getValue()
 
 
 def duplicate_imp_and_calibrate(
@@ -526,29 +282,6 @@ def extract(list, index):
     return [item[index] for item in list]
 
 
-def mean_from_list(values_list, round_decimals=0):
-    """Calculate the mean from a list
-
-    Parameters
-    ----------
-    list : list
-        List with numbers
-    round_decimals : int, optional
-        Rounding decimal to use for the result, by default 0
-
-    Returns
-    -------
-    float
-        Mean value of the list
-    """
-    filtered_list = filter(None, values_list)
-    try:
-        result =  round(float(sum(filtered_list)) / len(filtered_list), round_decimals)
-    except ZeroDivisionError:
-        result = 0
-    return result
-
-
 def bg_subtraction(imp, slice_number=None, roi=None, stat_to_use="mean"):
     """Subtract the background from an image based on stats
 
@@ -648,53 +381,6 @@ def rescale_image(imp, width, height):
     return imp2
 
 
-def upload_array_as_omero_table(user_client, data, columns, image_wpr):
-    """Upload a table to OMERO plus from a list of lists
-
-    Parameters
-    ----------
-    user_client : fr.igred.omero.Client
-        Client used for login to OMERO
-    data : list(list())
-        List of lists of results to upload
-    columns : list(str)
-        List of columns names
-    image_wpr : fr.igred.omero.repositor.ImageWrapper
-        Wrapper to the image to be uploaded
-    """
-    dataset_wpr = image_wpr.getDatasets(user_client)[0]
-
-    table_data = TableData(columns, data)
-    table_wpr = TableWrapper(table_data)
-    table_wpr.setName("PSF Inspector Table")
-    dataset_wpr.addTable(user_client, table_wpr)
-
-def create_table_columns(headings):
-    """Create the table headings from the ImageJ results table
-
-    Parameters
-    ----------
-    headings : list(str)
-        List of columns names
-
-    Returns
-    -------
-    list(omero.gateway.model.TableDataColumn)
-        List of columns formatted to be uploaded to OMERO
-    """
-    table_columns = []
-    # populate the headings
-    for h in range(len(headings)):
-        heading = headings.keys()[h]
-        type = headings.values()[h]
-        # OMERO.tables queries don't handle whitespace well
-        heading = heading.replace(" ", "_")
-        # title_heading = ["Slice", "Label"]
-        table_columns.append(TableDataColumn(heading, h, type))
-    # table_columns.append(TableDataColumn("Image", size, ImageData))
-    return table_columns
-
-
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 
 # OMERO server info
@@ -723,11 +409,10 @@ if __name__ == "__main__":
     rm.reset()
 
     try:
-        user_client = Client()
-        user_client.connect(HOST, PORT, USERNAME, PASSWORD)
+        user_client = omerotools.connect(HOST, PORT, USERNAME, PASSWORD)
 
-        if OMERO_link:
-            image_ids_array = parse_url(OMERO_link)
+        image_wrappers = omerotools.parse_url(user_client, OMERO_link)
+        image_wrappers.sort()
             image_ids_array.sort()
         else:
             image_ids_array = []
@@ -767,6 +452,9 @@ if __name__ == "__main__":
             else:
                 imp = image_ids_array[0]
 
+            acq_metadata_dict = omerotools.get_acquisition_metadata(
+                user_client, image_wpr
+            )
 
 
             # Set calibration in nm
@@ -822,7 +510,9 @@ if __name__ == "__main__":
             omero_avg_columns["Image Name"] = String
 
             for region_index, region_roi in enumerate(rm.getRoisAsArray()):
-                progress_bar(region_index + 1, rm.getCount(), 3, "Processing ROI : ")
+                misc.progressbar(
+                    region_index + 1, rm.getCount(), 3, "Processing ROI : "
+                )
                 concat_array = []
 
                 if region_index == 0:
@@ -830,8 +520,11 @@ if __name__ == "__main__":
                     channel_order.insert(0, channel_order.pop(ref_chnl - 1))
 
                 for channel_index, channel in enumerate(channel_order):
-                    progress_bar(
-                        channel_index + 1, imp.getNChannels(), 4, "Processing channel : "
+                    misc.progressbar(
+                        channel_index + 1,
+                        imp.getNChannels(),
+                        4,
+                        "Processing channel : ",
                     )
 
                     # if region_index == 0:
@@ -1472,46 +1165,49 @@ if __name__ == "__main__":
                 )
 
                 IJ.log("\\Update5:Exporting image to temp folder...")
-                BFExport(concat_imp, out_path)
+                bf.export(concat_imp, out_path)
 
                 if OMERO_link:
                     IJ.log("\\Update5:Uploading image to OMERO...")
-                    upload_image_to_omero(user_client, out_path, dataset_id)
+                    _ = omerotools.upload_image_to_omero(
+                        user_client, out_path, dataset_id
+                    )
                     os.remove(out_path)
                     if not omero_roi:
                         IJ.log("\\Update5:Uploading ROI to OMERO...")
-                        roivec = save_rois_to_omero(user_client, image_wpr, rm)
+                        roivec = omerotools.save_rois_to_omero(
+                            user_client, image_wpr, rm
+                        )
                     concat_imp.close()
                 else:
                     IJ.log("\\Update5:Image is saved : " + out_path)
-
 
             for i in range(imp.getNChannels()):
                 if rm.getCount() > 1:
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_X_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_X[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_X[i])[0]),
                         )
                     )
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_Y_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_Y[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_Y[i])[0]),
                         )
                     )
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_Z_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_Z[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_Z[i])[0]),
                         )
                     )
 
                 average_values.extend(
                     [
-                        Double(mean_from_list(avg_FWHM_X[i])),
-                        Double(mean_from_list(avg_FWHM_Y[i])),
-                        Double(mean_from_list(avg_FWHM_Z[i])),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_X[i])[0]),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_Y[i])[0]),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_Z[i])[0]),
                     ]
                 )
 
@@ -1544,25 +1240,27 @@ if __name__ == "__main__":
             kv_dict.add(NamedValue("OBJECTIVE_NA", str(obj_na)))
             kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
             if delete_previous_kv:
-                delete_annotation(user_client, image_wpr)
-                delete_annotation(user_client, dataset_wpr)
-            add_annotation(user_client, image_wpr, kv_dict, "PSF Inspector")
+                omerotools.delete_annotation(user_client, image_wpr)
+                omerotools.delete_annotation(user_client, dataset_wpr)
+            omerotools.add_keyvalue_annotation(
+                user_client, image_wpr, kv_dict, "PSF Inspector"
+            )
 
             imp.close()
             omero_avg_table.append(average_values)
 
             # omero_columns = create_table_columns(omero_columns)
-        omero_avg_columns = create_table_columns(omero_avg_columns)
 
         # upload_array_as_omero_table(ctx, gateway, map(list, zip(*omero_table)), omero_columns, image_id)
-        upload_array_as_omero_table(
-            user_client, map(list, zip(*omero_avg_table)), omero_avg_columns, image_wpr
+        omerotools.upload_array_as_omero_table(
+            user_client,
+            "PSF Inspector results",
+            map(list, zip(*omero_avg_table)),
+            omero_avg_columns,
+            image_wpr,
         )
-
 
     finally:
         user_client.disconnect()
 
-
     IJ.log("Script finished.")
-
