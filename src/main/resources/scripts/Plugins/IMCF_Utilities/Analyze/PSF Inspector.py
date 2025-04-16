@@ -1205,6 +1205,7 @@ if __name__ == "__main__":
 
 
             omero_avg_columns["Acquisition Date"] = String
+            # Integer not supported, so have to use Long
             omero_avg_columns["Acquisition Date Number"] = Long
             omero_avg_columns["Microscope"] = String
             omero_avg_columns["Objective Magnification"] = String
@@ -1213,20 +1214,35 @@ if __name__ == "__main__":
 
             average_values.extend(
                 [
-                    acq_date,
-                    acq_date_number,
+                    acq_metadata_dict["acquisition_date"],
+                    # Integer not supported, so have to use Long
+                    Long(acq_metadata_dict["acquisition_date_number"]),
                     project_name,
-                    str(int(obj_mag)) + "x",
-                    str(obj_na),
+                    str(int(acq_metadata_dict["objective_magnification"])) + "x",
+                    str(acq_metadata_dict["objective_na"]),
                     image_wpr.asImageData(),
                 ]
             )
 
-            kv_dict.add(NamedValue("ACQUISITION_DATE", acq_date))
+            kv_dict.add(
+                NamedValue("ACQUISITION_DATE", acq_metadata_dict["acquisition_date"])
+            )
             kv_dict.add(NamedValue("MICROSCOPE", project_name))
-            kv_dict.add(NamedValue("OBJECTIVE_MAGNIFICATION", str(int(obj_mag)) + "x"))
-            kv_dict.add(NamedValue("OBJECTIVE_NA", str(obj_na)))
-            kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
+            kv_dict.add(
+                NamedValue(
+                    "OBJECTIVE_MAGNIFICATION",
+                    str(int(acq_metadata_dict["objective_magnification"])) + "x",
+                )
+            )
+            kv_dict.add(
+                NamedValue("OBJECTIVE_NA", str(acq_metadata_dict["objective_na"]))
+            )
+            kv_dict.add(
+                NamedValue(
+                    "ACQUISITION_DATE_NUMBER",
+                    str(acq_metadata_dict["acquisition_date_number"]),
+                )
+            )
             if delete_previous_kv:
                 omerotools.delete_annotation(user_client, image_wpr)
                 omerotools.delete_annotation(user_client, dataset_wpr)
