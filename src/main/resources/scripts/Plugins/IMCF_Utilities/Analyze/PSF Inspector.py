@@ -12,10 +12,10 @@ import math
 import os
 import re
 import sys
+from collections import OrderedDict
 from datetime import date
 
-from collections import OrderedDict
-
+from fr.igred.omero.roi import ROIWrapper
 from ij import IJ
 from ij import WindowManager as wm
 from ij.gui import Line, Overlay, Plot, Roi, TextRoi, WaitForUserDialog
@@ -400,6 +400,7 @@ final_size = 550
 half_final_size = final_size / 2
 
 # ─── CODE ───────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     IJ.log("\\Clear")
     IJ.log("Script started")
@@ -558,7 +559,9 @@ if __name__ == "__main__":
                     bg_ROI = Roi(ROI_size_bg, ROI_size_bg, ROI_size_bg, ROI_size_bg)
 
                     bg_subtraction(
-                        imp_centered_ROI_current_channel, stack_stats["best_slice"], bg_ROI
+                        imp_centered_ROI_current_channel,
+                        stack_stats["best_slice"],
+                        bg_ROI,
                     )
                     imp_centered_ROI_current_channel.show()
 
@@ -624,7 +627,9 @@ if __name__ == "__main__":
                     )
 
                     bg_subtraction(
-                        imp_centered_ROI_current_channel_proj, roi=bg_ROI, stat_to_use="min"
+                        imp_centered_ROI_current_channel_proj,
+                        roi=bg_ROI,
+                        stat_to_use="min",
                     )
                     imp_centered_ROI_current_channel_proj.setTitle("Project")
 
@@ -639,10 +644,20 @@ if __name__ == "__main__":
                     )
 
                     imp_y_proj = change_canvas_size(
-                        imp_y_proj, project_width, project_width, "Top-Right", True, True
+                        imp_y_proj,
+                        project_width,
+                        project_width,
+                        "Top-Right",
+                        True,
+                        True,
                     )
                     imp_x_proj = change_canvas_size(
-                        imp_x_proj, project_width, project_width, "Bottom-Left", True, True
+                        imp_x_proj,
+                        project_width,
+                        project_width,
+                        "Bottom-Left",
+                        True,
+                        True,
                     )
                     # scale_value = half_final_size / ROI_size
 
@@ -716,7 +731,9 @@ if __name__ == "__main__":
                     y_plot_ax_real = []
                     for i in range(amplitude):
                         x_plot_ax_real.append((i - amplitude / 2) * z_voxel)
-                        y_plot_ax_real.append(z_profile_y[best_slice - amplitude / 2 + i])
+                        y_plot_ax_real.append(
+                            z_profile_y[best_slice - amplitude / 2 + i]
+                        )
                         if y_plot_ax_real[i] >= max_graph:
                             max_graph = y_plot_ax_real[i]
 
@@ -750,7 +767,8 @@ if __name__ == "__main__":
                             * fit_results[3]
                             * fit_results[3]
                             * math.log(
-                                (HM - fit_results[0]) / (fit_results[1] - fit_results[0])
+                                (HM - fit_results[0])
+                                / (fit_results[1] - fit_results[0])
                             )
                         )
                     except (ValueError, ZeroDivisionError):
@@ -768,7 +786,9 @@ if __name__ == "__main__":
                             imp_montage_2.getHeight(),
                             2,
                         )
-                        stack_imp = ImagesToStack().run([imp_montage_2, temp_imp, temp_imp])
+                        stack_imp = ImagesToStack().run(
+                            [imp_montage_2, temp_imp, temp_imp]
+                        )
                         concat_array.append(stack_imp)
 
                         avg_FWHM_X[channel - 1].append(None)
@@ -865,7 +885,11 @@ if __name__ == "__main__":
                                     -(x - fit_results_lateral_1[2])
                                     * (x - fit_results_lateral_1[2])
                                 )
-                                / (2 * fit_results_lateral_1[3] * fit_results_lateral_1[3])
+                                / (
+                                    2
+                                    * fit_results_lateral_1[3]
+                                    * fit_results_lateral_1[3]
+                                )
                             )
                         )
                         yy_plot_lat_fit.append(
@@ -876,7 +900,11 @@ if __name__ == "__main__":
                                     -(x - fit_results_lateral_2[2])
                                     * (x - fit_results_lateral_2[2])
                                 )
-                                / (2 * fit_results_lateral_2[3] * fit_results_lateral_2[3])
+                                / (
+                                    2
+                                    * fit_results_lateral_2[3]
+                                    * fit_results_lateral_2[3]
+                                )
                             )
                         )
 
@@ -995,7 +1023,9 @@ if __name__ == "__main__":
                     fwhml_avg_text = TextRoi(
                         text_position_start + 20,
                         text_position_start + 100,
-                        "FWHM lateral average = " + str(int((FWHMl + FWHMly) / 2)) + "nm",
+                        "FWHM lateral average = "
+                        + str(int((FWHMl + FWHMly) / 2))
+                        + "nm",
                     )
                     fwhma_text = TextRoi(
                         text_position_start + 20,
@@ -1028,7 +1058,10 @@ if __name__ == "__main__":
                         shift_z_text = TextRoi(
                             text_position_start + 20,
                             text_position_start + 160,
-                            "Z Shift : " + str(z_shift) + "plane(s) from C" + str(ref_chnl),
+                            "Z Shift : "
+                            + str(z_shift)
+                            + "plane(s) from C"
+                            + str(ref_chnl),
                         )
                         set_roi_color_and_position(
                             shift_z_text, Color.red, position_frame=channel_index + 1
@@ -1127,11 +1160,13 @@ if __name__ == "__main__":
                     )
                     kv_dict.add(
                         NamedValue(
-                            "C" + str(channel) + "_FWHM_Z_ROI_" + str(region_roi.getName()),
+                            "C"
+                            + str(channel)
+                            + "_FWHM_Z_ROI_"
+                            + str(region_roi.getName()),
                             str(int(FWHMa)),
                         )
                     )
-
 
                 concat_imp = Concatenator.run(concat_array)
                 concat_imp.setTitle(imp.getTitle() + "_maintenance")
@@ -1202,7 +1237,6 @@ if __name__ == "__main__":
                 omero_avg_columns["C" + str(i) + " FWHM Axial X"] = Double
                 omero_avg_columns["C" + str(i) + " FWHM Axial Y"] = Double
                 omero_avg_columns["C" + str(i) + " FWHM Z"] = Double
-
 
             omero_avg_columns["Acquisition Date"] = String
             # Integer not supported, so have to use Long
