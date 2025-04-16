@@ -413,49 +413,37 @@ if __name__ == "__main__":
 
         image_wrappers = omerotools.parse_url(user_client, OMERO_link)
         image_wrappers.sort()
-            image_ids_array.sort()
-        else:
-            image_ids_array = []
-            image_ids_array.append(wm.getCurrentImage())
+        # else:
+        #     image_ids_array = []
+        #     image_ids_array.append(wm.getCurrentImage())
 
         omero_avg_table = []
         omero_avg_columns = OrderedDict()
 
         # imps = BFImport(file_to_open)
-        for image_index, image_id in enumerate(image_ids_array):
+        for image_index, image_wpr in enumerate(image_wrappers):
             kv_dict = ArrayList()
             kv_dict.clear()
 
             average_values = []
 
-            progress_bar(image_index + 1, len(image_ids_array), 2, "Processing : ")
+            misc.progressbar(image_index + 1, len(image_wrappers), 2, "Processing : ")
 
             rm = RoiManager.getInstance()
             rm.reset()
 
-            if OMERO_link:
-                image_wpr = user_client.getImage(Long(image_id))
-                dataset_wpr = image_wpr.getDatasets(user_client)[0]
-                dataset_id = dataset_wpr.getId()
-                dataset_name = dataset_wpr.getName()
-                project_name = dataset_wpr.getProjects(user_client)[0].getName()
-
-                (
-                    obj_mag,
-                    obj_na,
-                    acq_date,
-                    acq_date_number,
-                ) = get_acquisition_metadata_from_imageid(user_client, image_wpr)
-
-                IJ.log("\\Update5:Fetching image from OMERO...")
-                imp = image_wpr.toImagePlus(user_client)
-            else:
-                imp = image_ids_array[0]
+            # image_wpr = image_wrapper.toImagePlus()
+            dataset_wpr = image_wpr.getDatasets(user_client)[0]
+            dataset_id = dataset_wpr.getId()
+            dataset_name = dataset_wpr.getName()
+            project_name = dataset_wpr.getProjects(user_client)[0].getName()
 
             acq_metadata_dict = omerotools.get_acquisition_metadata(
                 user_client, image_wpr
             )
 
+            IJ.log("\\Update5:Fetching image from OMERO...")
+            imp = image_wpr.toImagePlus(user_client)
 
             # Set calibration in nm
             average_values.extend([imp.getTitle()])
