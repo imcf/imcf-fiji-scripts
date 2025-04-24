@@ -15,6 +15,7 @@ import sys
 from collections import OrderedDict
 from datetime import date
 
+import sjlogging
 from fr.igred.omero.roi import ROIWrapper
 from ij import IJ
 from ij import WindowManager as wm
