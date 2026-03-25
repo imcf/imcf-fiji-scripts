@@ -1,5 +1,6 @@
 // use a channel order more common to microscopy images:
-LUTs = newArray("Blue", "Green", "Red", "Cyan", "Magenta", "Yellow");
+// use LUTs unambiguous to color blind humans.
+LUTs = newArray("CB Blue", "CB BluishGreen", "CB Orange", "CB ReddishPurple", "CB SkyBlue", "CB Yellow", "CB Vermilion");
 
 getDimensions(width, height, channels, slices, frames);
 
