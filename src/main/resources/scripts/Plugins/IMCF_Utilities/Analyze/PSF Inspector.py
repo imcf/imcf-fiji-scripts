@@ -12,10 +12,11 @@ import math
 import os
 import re
 import sys
+from collections import OrderedDict
 from datetime import date
 
-from collections import OrderedDict
-
+import sjlogging
+from fr.igred.omero.roi import ROIWrapper
 from ij import IJ
 from ij import WindowManager as wm
 from ij.gui import Line, Overlay, Plot, Roi, TextRoi, WaitForUserDialog
@@ -28,6 +29,8 @@ from ij.plugin import (
     ZProjector,
 )
 from ij.plugin.frame import RoiManager
+from imcflibs.imagej import bioformats as bf
+from imcflibs.imagej import misc, omerotools
 from java.awt import Color, Font
 
 # java imports
@@ -55,21 +58,7 @@ from omero.gateway.exception import DSAccessException
 def BFImport(indivFile):
     """Import the file using BioFormats
 
-    Parameters
-    ----------
-    indivFile : str
-        Path of the file to open
-
-    Returns
-    -------
-    list(ij.ImagePlus)
-        Array of ImagePlus read from the file
-    """
-
-    options = ImporterOptions()
-    options.setId(str(indivFile))
-    options.setColorMode(ImporterOptions.COLOR_MODE_COMPOSITE)
-    return BF.openImagePlus(options)
+# ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 
 
 def coord_brightest_point(input_imp, selected_roi, best_slice):
@@ -531,29 +520,6 @@ def extract(list, index):
     return [item[index] for item in list]
 
 
-def mean_from_list(values_list, round_decimals=0):
-    """Calculate the mean from a list
-
-    Parameters
-    ----------
-    list : list
-        List with numbers
-    round_decimals : int, optional
-        Rounding decimal to use for the result, by default 0
-
-    Returns
-    -------
-    float
-        Mean value of the list
-    """
-    filtered_list = filter(None, values_list)
-    try:
-        result =  round(float(sum(filtered_list)) / len(filtered_list), round_decimals)
-    except ZeroDivisionError:
-        result = 0
-    return result
-
-
 def bg_subtraction(imp, slice_number=None, roi=None, stat_to_use="mean"):
     """Subtract the background from an image based on stats
 
@@ -723,6 +689,7 @@ final_size = 550
 half_final_size = final_size / 2
 
 # ─── CODE ───────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     IJ.log("\\Clear")
     IJ.log("Script started")
@@ -732,51 +699,41 @@ if __name__ == "__main__":
     rm.reset()
 
     try:
-        user_client = Client()
-        user_client.connect(HOST, PORT, USERNAME, PASSWORD)
+        user_client = omerotools.connect(HOST, PORT, USERNAME, PASSWORD)
 
-        if OMERO_link:
-            image_ids_array = parse_url(OMERO_link)
-            image_ids_array.sort()
-        else:
-            image_ids_array = []
-            image_ids_array.append(wm.getCurrentImage())
+        image_wrappers = omerotools.parse_url(user_client, OMERO_link)
+        image_wrappers.sort()
+        # else:
+        #     image_ids_array = []
+        #     image_ids_array.append(wm.getCurrentImage())
 
         omero_avg_table = []
         omero_avg_columns = OrderedDict()
 
         # imps = BFImport(file_to_open)
-        for image_index, image_id in enumerate(image_ids_array):
+        for image_index, image_wpr in enumerate(image_wrappers):
             kv_dict = ArrayList()
             kv_dict.clear()
 
             average_values = []
 
-            progress_bar(image_index + 1, len(image_ids_array), 2, "Processing : ")
+            misc.progressbar(image_index + 1, len(image_wrappers), 2, "Processing : ")
 
             rm = RoiManager.getInstance()
             rm.reset()
 
-            if OMERO_link:
-                image_wpr = user_client.getImage(Long(image_id))
-                dataset_wpr = image_wpr.getDatasets(user_client)[0]
-                dataset_id = dataset_wpr.getId()
-                dataset_name = dataset_wpr.getName()
-                project_name = dataset_wpr.getProjects(user_client)[0].getName()
+            # image_wpr = image_wrapper.toImagePlus()
+            dataset_wpr = image_wpr.getDatasets(user_client)[0]
+            dataset_id = dataset_wpr.getId()
+            dataset_name = dataset_wpr.getName()
+            project_name = dataset_wpr.getProjects(user_client)[0].getName()
 
-                (
-                    obj_mag,
-                    obj_na,
-                    acq_date,
-                    acq_date_number,
-                ) = get_acquisition_metadata_from_imageid(user_client, image_wpr)
+            acq_metadata_dict = omerotools.get_acquisition_metadata(
+                user_client, image_wpr
+            )
 
-                IJ.log("\\Update5:Fetching image from OMERO...")
-                imp = image_wpr.toImagePlus(user_client)
-            else:
-                imp = image_ids_array[0]
-
-
+            IJ.log("\\Update5:Fetching image from OMERO...")
+            imp = image_wpr.toImagePlus(user_client)
 
             # Set calibration in nm
             average_values.extend([imp.getTitle()])
@@ -831,7 +788,9 @@ if __name__ == "__main__":
             omero_avg_columns["Image Name"] = String
 
             for region_index, region_roi in enumerate(rm.getRoisAsArray()):
-                progress_bar(region_index + 1, rm.getCount(), 3, "Processing ROI : ")
+                misc.progressbar(
+                    region_index + 1, rm.getCount(), 3, "Processing ROI : "
+                )
                 concat_array = []
 
                 if region_index == 0:
@@ -839,8 +798,11 @@ if __name__ == "__main__":
                     channel_order.insert(0, channel_order.pop(ref_chnl - 1))
 
                 for channel_index, channel in enumerate(channel_order):
-                    progress_bar(
-                        channel_index + 1, imp.getNChannels(), 4, "Processing channel : "
+                    misc.progressbar(
+                        channel_index + 1,
+                        imp.getNChannels(),
+                        4,
+                        "Processing channel : ",
                     )
 
                     # if region_index == 0:
@@ -886,7 +848,9 @@ if __name__ == "__main__":
                     bg_ROI = Roi(ROI_size_bg, ROI_size_bg, ROI_size_bg, ROI_size_bg)
 
                     bg_subtraction(
-                        imp_centered_ROI_current_channel, stack_stats["best_slice"], bg_ROI
+                        imp_centered_ROI_current_channel,
+                        stack_stats["best_slice"],
+                        bg_ROI,
                     )
                     imp_centered_ROI_current_channel.show()
 
@@ -952,7 +916,9 @@ if __name__ == "__main__":
                     )
 
                     bg_subtraction(
-                        imp_centered_ROI_current_channel_proj, roi=bg_ROI, stat_to_use="min"
+                        imp_centered_ROI_current_channel_proj,
+                        roi=bg_ROI,
+                        stat_to_use="min",
                     )
                     imp_centered_ROI_current_channel_proj.setTitle("Project")
 
@@ -967,10 +933,20 @@ if __name__ == "__main__":
                     )
 
                     imp_y_proj = change_canvas_size(
-                        imp_y_proj, project_width, project_width, "Top-Right", True, True
+                        imp_y_proj,
+                        project_width,
+                        project_width,
+                        "Top-Right",
+                        True,
+                        True,
                     )
                     imp_x_proj = change_canvas_size(
-                        imp_x_proj, project_width, project_width, "Bottom-Left", True, True
+                        imp_x_proj,
+                        project_width,
+                        project_width,
+                        "Bottom-Left",
+                        True,
+                        True,
                     )
                     # scale_value = half_final_size / ROI_size
 
@@ -1044,7 +1020,9 @@ if __name__ == "__main__":
                     y_plot_ax_real = []
                     for i in range(amplitude):
                         x_plot_ax_real.append((i - amplitude / 2) * z_voxel)
-                        y_plot_ax_real.append(z_profile_y[best_slice - amplitude / 2 + i])
+                        y_plot_ax_real.append(
+                            z_profile_y[best_slice - amplitude / 2 + i]
+                        )
                         if y_plot_ax_real[i] >= max_graph:
                             max_graph = y_plot_ax_real[i]
 
@@ -1078,7 +1056,8 @@ if __name__ == "__main__":
                             * fit_results[3]
                             * fit_results[3]
                             * math.log(
-                                (HM - fit_results[0]) / (fit_results[1] - fit_results[0])
+                                (HM - fit_results[0])
+                                / (fit_results[1] - fit_results[0])
                             )
                         )
                     except (ValueError, ZeroDivisionError):
@@ -1096,7 +1075,9 @@ if __name__ == "__main__":
                             imp_montage_2.getHeight(),
                             2,
                         )
-                        stack_imp = ImagesToStack().run([imp_montage_2, temp_imp, temp_imp])
+                        stack_imp = ImagesToStack().run(
+                            [imp_montage_2, temp_imp, temp_imp]
+                        )
                         concat_array.append(stack_imp)
 
                         avg_FWHM_X[channel - 1].append(None)
@@ -1193,7 +1174,11 @@ if __name__ == "__main__":
                                     -(x - fit_results_lateral_1[2])
                                     * (x - fit_results_lateral_1[2])
                                 )
-                                / (2 * fit_results_lateral_1[3] * fit_results_lateral_1[3])
+                                / (
+                                    2
+                                    * fit_results_lateral_1[3]
+                                    * fit_results_lateral_1[3]
+                                )
                             )
                         )
                         yy_plot_lat_fit.append(
@@ -1204,7 +1189,11 @@ if __name__ == "__main__":
                                     -(x - fit_results_lateral_2[2])
                                     * (x - fit_results_lateral_2[2])
                                 )
-                                / (2 * fit_results_lateral_2[3] * fit_results_lateral_2[3])
+                                / (
+                                    2
+                                    * fit_results_lateral_2[3]
+                                    * fit_results_lateral_2[3]
+                                )
                             )
                         )
 
@@ -1332,7 +1321,9 @@ if __name__ == "__main__":
                     fwhml_avg_text = TextRoi(
                         text_position_start + 20,
                         text_position_start + 100,
-                        "FWHM lateral average = " + str(int((FWHMl + FWHMly) / 2)) + "nm",
+                        "FWHM lateral average = "
+                        + str(int((FWHMl + FWHMly) / 2))
+                        + "nm",
                     )
                     fwhma_text = TextRoi(
                         text_position_start + 20,
@@ -1365,7 +1356,10 @@ if __name__ == "__main__":
                         shift_z_text = TextRoi(
                             text_position_start + 20,
                             text_position_start + 160,
-                            "Z Shift : " + str(z_shift) + "plane(s) from C" + str(ref_chnl),
+                            "Z Shift : "
+                            + str(z_shift)
+                            + "plane(s) from C"
+                            + str(ref_chnl),
                         )
                         set_roi_color_and_position(
                             shift_z_text, Color.red, position_frame=channel_index + 1
@@ -1464,11 +1458,13 @@ if __name__ == "__main__":
                     )
                     kv_dict.add(
                         NamedValue(
-                            "C" + str(channel) + "_FWHM_Z_ROI_" + str(region_roi.getName()),
+                            "C"
+                            + str(channel)
+                            + "_FWHM_Z_ROI_"
+                            + str(region_roi.getName()),
                             str(int(FWHMa)),
                         )
                     )
-
 
                 concat_imp = Concatenator.run(concat_array)
                 concat_imp.setTitle(imp.getTitle() + "_maintenance")
@@ -1490,46 +1486,49 @@ if __name__ == "__main__":
                 )
 
                 IJ.log("\\Update5:Exporting image to temp folder...")
-                BFExport(concat_imp, out_path)
+                bf.export(concat_imp, out_path)
 
                 if OMERO_link:
                     IJ.log("\\Update5:Uploading image to OMERO...")
-                    upload_image_to_omero(user_client, out_path, dataset_id)
+                    _ = omerotools.upload_image_to_omero(
+                        user_client, out_path, dataset_id
+                    )
                     os.remove(out_path)
                     if not omero_roi:
                         IJ.log("\\Update5:Uploading ROI to OMERO...")
-                        roivec = save_rois_to_omero(user_client, image_wpr, rm)
+                        roivec = omerotools.save_rois_to_omero(
+                            user_client, image_wpr, rm
+                        )
                     concat_imp.close()
                 else:
                     IJ.log("\\Update5:Image is saved : " + out_path)
-
 
             for i in range(imp.getNChannels()):
                 if rm.getCount() > 1:
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_X_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_X[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_X[i])[0]),
                         )
                     )
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_Y_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_Y[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_Y[i])[0]),
                         )
                     )
                     kv_dict.add(
                         NamedValue(
                             "AVERAGE_FWHM_Z_All_ROIS_C" + str(i + 1),
-                            str(mean_from_list(avg_FWHM_Z[i])),
+                            str(misc.calculate_mean_and_stdv(avg_FWHM_Z[i])[0]),
                         )
                     )
 
                 average_values.extend(
                     [
-                        Double(mean_from_list(avg_FWHM_X[i])),
-                        Double(mean_from_list(avg_FWHM_Y[i])),
-                        Double(mean_from_list(avg_FWHM_Z[i])),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_X[i])[0]),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_Y[i])[0]),
+                        Double(misc.calculate_mean_and_stdv(avg_FWHM_Z[i])[0]),
                     ]
                 )
 
@@ -1537,8 +1536,8 @@ if __name__ == "__main__":
                 omero_avg_columns["C" + str(i) + " FWHM Axial Y"] = Double
                 omero_avg_columns["C" + str(i) + " FWHM Z"] = Double
 
-
             omero_avg_columns["Acquisition Date"] = String
+            # Integer not supported, so have to use Long
             omero_avg_columns["Acquisition Date Number"] = Long
             omero_avg_columns["Microscope"] = String
             omero_avg_columns["Objective Magnification"] = String
@@ -1547,40 +1546,57 @@ if __name__ == "__main__":
 
             average_values.extend(
                 [
-                    acq_date,
-                    acq_date_number,
+                    acq_metadata_dict["acquisition_date"],
+                    # Integer not supported, so have to use Long
+                    Long(acq_metadata_dict["acquisition_date_number"]),
                     project_name,
-                    str(int(obj_mag)) + "x",
-                    str(obj_na),
+                    str(int(acq_metadata_dict["objective_magnification"])) + "x",
+                    str(acq_metadata_dict["objective_na"]),
                     image_wpr.asImageData(),
                 ]
             )
 
-            kv_dict.add(NamedValue("ACQUISITION_DATE", acq_date))
+            kv_dict.add(
+                NamedValue("ACQUISITION_DATE", acq_metadata_dict["acquisition_date"])
+            )
             kv_dict.add(NamedValue("MICROSCOPE", project_name))
-            kv_dict.add(NamedValue("OBJECTIVE_MAGNIFICATION", str(int(obj_mag)) + "x"))
-            kv_dict.add(NamedValue("OBJECTIVE_NA", str(obj_na)))
-            kv_dict.add(NamedValue("ACQUISITION_DATE_NUMBER", str(acq_date_number)))
+            kv_dict.add(
+                NamedValue(
+                    "OBJECTIVE_MAGNIFICATION",
+                    str(int(acq_metadata_dict["objective_magnification"])) + "x",
+                )
+            )
+            kv_dict.add(
+                NamedValue("OBJECTIVE_NA", str(acq_metadata_dict["objective_na"]))
+            )
+            kv_dict.add(
+                NamedValue(
+                    "ACQUISITION_DATE_NUMBER",
+                    str(acq_metadata_dict["acquisition_date_number"]),
+                )
+            )
             if delete_previous_kv:
-                delete_annotation(user_client, image_wpr)
-                delete_annotation(user_client, dataset_wpr)
-            add_annotation(user_client, image_wpr, kv_dict, "PSF Inspector")
+                omerotools.delete_annotation(user_client, image_wpr)
+                omerotools.delete_annotation(user_client, dataset_wpr)
+            omerotools.add_keyvalue_annotation(
+                user_client, image_wpr, kv_dict, "PSF Inspector"
+            )
 
             imp.close()
             omero_avg_table.append(average_values)
 
             # omero_columns = create_table_columns(omero_columns)
-        omero_avg_columns = create_table_columns(omero_avg_columns)
 
         # upload_array_as_omero_table(ctx, gateway, map(list, zip(*omero_table)), omero_columns, image_id)
-        upload_array_as_omero_table(
-            user_client, map(list, zip(*omero_avg_table)), omero_avg_columns, image_wpr
+        omerotools.upload_array_as_omero_table(
+            user_client,
+            "PSF Inspector results",
+            map(list, zip(*omero_avg_table)),
+            omero_avg_columns,
+            image_wpr,
         )
-
 
     finally:
         user_client.disconnect()
 
-
     IJ.log("Script finished.")
-
